@@ -1,8 +1,13 @@
 Sprint length, daily sprint, sprint planning, sprint review, retrospective
 
 Sprint 1: 08-10-2025 --> 26-10-2025
+Sprint goal: Rasperry pi and robot working, basic signal proccesing, build protocol
+
 sprint length: 2 weeks
+
 sprint planning:
+Vacation week, spend as much time as is wanted
+When we get back from vacation, talk to leon on wednesday
 
 sprint review:
 retrospective: 
