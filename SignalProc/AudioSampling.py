@@ -31,17 +31,3 @@ class AudioSampler:
         plt.grid()
         plt.show()
 
-def main():
-    parser = argparse.ArgumentParser(description="Audio Sampler")
-    parser.add_argument("--duration", type=int, default=5, help="Duration of recording in seconds")
-    parser.add_argument("--fs", type=int, default=44100, help="Sampling frequency")
-    parser.add_argument("--output", type=str, default="output.wav", help="Output WAV file name")
-    args = parser.parse_args()
-
-    sampler = AudioSampler(args.duration, args.fs, args.output)
-    sampler.record_audio()
-    sampler.save_audio()
-    sampler.plot_waveform()
-
-if __name__ == "__main__":
-    main()
