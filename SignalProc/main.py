@@ -7,7 +7,7 @@ from BandpassFilter import BandPassFilter
 from Goertzel import GoertzelAlgorithm
 
 # Parametre for DTMF-detektion
-MIN_DB   = -90.0   # absolut minimumsniveau pr. gruppe (dB) for at acceptere
+MIN_DB   = -60.0   # absolut minimumsniveau pr. gruppe (dB) for at acceptere
 SEP_DB   = 6.0     # min. afstand til næstbedste i samme gruppe (dB)
 TWIST_DB = 8.0     # max forskel mellem row- og col-energi (dB)
 HOLD_MIN = 2       # antal blokke i træk før vi udsender et symbol
@@ -141,7 +141,8 @@ def main():
     sampler.plot_waveform()
 
     # 2) Analyse + impulser
-    analyze_and_plot(audio, fs=args.fs, block=args.block, show_resp=args.show_filter)
+    block = int(round(0.04 * sampler.fs))
+    analyze_and_plot(audio, fs=sampler.fs, block=block, show_resp=args.show_filter)
 
 if __name__ == "__main__":
     main()
