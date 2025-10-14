@@ -128,7 +128,7 @@ def analyze_and_plot(audio: np.ndarray, fs: int, block: int = 205,
 def main():
     ap = argparse.ArgumentParser(description="DTMF analyse (optag og plot impulser).")
     ap.add_argument("--duration", type=float, default=5.0, help="Optagetid i sek.")
-    ap.add_argument("--fs", type=int, default=8000, help="Samplerate (Hz)")
+    ap.add_argument("--fs", type=int, default=48000, help="Samplerate (Hz)")
     ap.add_argument("--block", type=int, default=205, help="Bloklængde til Goertzel")
     ap.add_argument("--out", type=str, default="output.wav", help="Gem WAV som")
     ap.add_argument("--show-filter", action="store_true", help="Vis filterets frekvensrespons")
