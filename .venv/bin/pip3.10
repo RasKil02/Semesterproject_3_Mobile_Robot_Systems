@@ -1,4 +1,4 @@
-#!/home/sammy/Semesterprojekt3/Semesterproject_3_Mobile_Robot_Systems/.venv/bin/python
+#!/home/rasmus/Documents/SemesterProjekt-3/Semesterproject_3_Mobile_Robot_Systems/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
