@@ -1,0 +1,36 @@
+1. SD card connection - Insert SD card to computer
+
+2. Go to home (in terminal)
+
+3. write: cd etc
+3.1 then: cd netplan
+3.2 then: sudo gedit 50-cloud-init.yaml
+
+4. Now you have opened the yaml, file and need to specify a local hotspot and the password (Make sure that the name of the hotspot is simple)
+
+5. Unmount SD card from computer
+5.1 sudo unmount /media/brugernavn/writable
+5.2 sudo unmount /media/brugernavn/system-boot
+
+6. Plug SD card into turtlebot
+
+7. Turn on turtlebot (if beeping charge battery)
+
+8. Connect computer to same hotspot as turtlebot 
+
+9. Finding turtlebot on local network
+9.1 in terminal write: sudo arp-scan -l
+9.2 Now you should have the turtlebot IP adress (172.20.10.6)(maybe it changes i dont know?)
+9.3 then: ssh pi@<IP-adress> (without <>)
+9.4 enter 'turtlebot' (this is the password)
+
+10. Now you are connected to the turtlebots local terminal
+
+11. Testing robot
+11.1 In turtlebots local terminal write: screen (this will open new terminal)
+11.2 Press enter
+11.3 write: ros2 launch mqtt_2_cmd_pkg mqtt_interface.launch.py
+11.4 When this has loaded and the last command line says something like: run!, enter: ctrl + a + c”
+11.5 Previous step should redirect you again, now enter: python3 mqtt_pub.py to run preloaded test code
+11.6 Enter linear velocity (no more than 0.22), and angular velocity (no limit)
+
