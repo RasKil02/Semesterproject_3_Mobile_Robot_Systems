@@ -2,15 +2,17 @@
 
 2. Go to home (in terminal)
 
-3. write: cd etc
-3.1 then: cd netplan
-3.2 then: sudo gedit 50-cloud-init.yaml
+3. write cd media
+3.1 then: cd <username>
+3.2 then: cd writeable
+3.3 write: cd etc
+3.4 then: cd netplan
+3.5 then: sudo gedit 50-cloud-init.yaml
 
 4. Now you have opened the yaml, file and need to specify a local hotspot and the password (Make sure that the name of the hotspot is simple)
 
 5. Unmount SD card from computer
-5.1 sudo unmount /media/brugernavn/writable
-5.2 sudo unmount /media/brugernavn/system-boot
+5.1 sudo umount /media/brugernavn/writable
 
 6. Plug SD card into turtlebot
 
@@ -20,12 +22,13 @@
 
 9. Finding turtlebot on local network
 9.1 in terminal write: sudo arp-scan -l
-9.2 Now you should have the turtlebot IP adress (172.20.10.6)(maybe it changes i dont know?)
+9.2 Now you should have the turtlebot IP adress (172.20.10.6)(maybe it changes i dont know (it does))
 9.3 then: ssh pi@<IP-adress> (without <>)
 9.4 enter 'turtlebot' (this is the password)
 
 10. Now you are connected to the turtlebots local terminal
 
+(Option)
 11. Testing robot
 11.1 In turtlebots local terminal write: screen (this will open new terminal)
 11.2 Press enter
@@ -34,3 +37,19 @@
 11.5 Previous step should redirect you again, now enter: python3 mqtt_pub.py to run preloaded test code
 11.6 Enter linear velocity (no more than 0.22), and angular velocity (no limit)
 
+12. Uploading code, and building project
+12.1 From the turtlebots local terminal type: scree, and press enter
+12.2 use ctrl + a + c, to create two additional screens (We need an A,B and a C screen)
+12.3 Navigate to screen C (ctrl + a + p and ctrl + a + n (for previous screen and next screen))
+12.4 type: source /opt/ros/jazzy/setup.bash
+12.5 type: export TURTLEBOT3_MODEL=burger
+12.6 type: ros2 launch turtlebot3_bringup robot.launch.py
+12.7 Navigate to screen A
+12.8 Type at once: Command 1: source /opt/ros/jazzy/setup.bash, Command 2: ros2 topic echo /cmd_vel geometry_msgs/TwistStamped
+12.9 Nothing will happen but this is good let it run
+12.10 Navigate to screen B (Here we turn on motors)
+12.11 Type: source /opt/ros/jazzy/setup.bash
+12.12 Type: ros2 service call /motor_power std_srvs/srv/SetBool "{data: true}"
+12.13 Type: cd ~/code_ws/src/Semesterproject_3_Mobile_Robot_Systems
+12.14 Type: PYTHONPATH="$PWD:$PYTHONPATH" python3 Main/main.py
+12.15 Program should run!
