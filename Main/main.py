@@ -1,7 +1,6 @@
 from DriveSystem import MoveTest
 from CommunicationProtocol import Protocol
 import numpy as np
-import sounddevice as sd
 
 def main():
 
