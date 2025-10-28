@@ -1,0 +1,24 @@
+Vi kører flere forskellige screens inde på robotten. En screen er i sig selv bare en 
+terminal vi har kørende på robotten. Vi kører 3 forskellige screens A, B, C. 
+
+Man skal starte med at initialisere alle screens, derefter køres "source /opt/ros/jazzy/setup.bash"
+på screen C. Denne bruges til at loade ROS 2 miljøet på robotten. Så køres der på samme screen 
+"export TURTLEBOT3_MODEL=burger", dette initialisere robotten med den rigtige model. Endeligt
+køres "ros2 launch turtlebot3_bringup robot.launch.py", dette er essentielt og starter alle nødvendige
+noder og processor. Screen C initialisere altså robotten med de korrekte parametre.
+
+Nu skifter vi til terminal A, og kører samme start linje: "source /opt/ros/jazzy/setup.bash". Denne 
+linje er nødvendig i alle terminaler for at den skal kende til ROS 2 kommandoer. Så kører vi 
+"ros2 topic echo /cmd_vel geometry_msgs/TwistStamped". Denne screen er egentligt bare til debugging. Vi
+echoer cmd_vel topicet og det beskeder som vi opfatter på det, så vi kan se hvad der sker under kodens 
+eksekvering. 
+
+For at starte robotten skifter vi til screen B. Vi starter igen med "source /opt/ros/jazzy/setup.bash". 
+Så køres kommandoen "ros2 service call /motor_power std_srvs/srv/SetBool "{data: true}"", som tænder for 
+motorene. Derefter navigere vi til den korrekte mappe med vores kode ved brug af
+"cd ~/code_ws/src/Semesterproject_3_Mobile_Robot_Systems".
+Endeligt køres "PYTHONPATH="$PWD:$PYTHONPATH" python3 Main/main.py", og sådan som jeg forstår det laver
+denne kommando en form for falsk python path, med vores main kode. Altså initialiseres koden her. 
+
+Note: Hvis lige pludselig det ikke virker er det højst sandsynligt fordi Twist og TwistStamped besked 
+flowet ikke stemmer over ens. Turtlebot forventer en type, og hvis koden er skrevet med den anden virker det ikke. 
