@@ -51,5 +51,5 @@
 12.11 Type: source /opt/ros/jazzy/setup.bash
 12.12 Type: ros2 service call /motor_power std_srvs/srv/SetBool "{data: true}"
 12.13 Type: cd ~/code_ws/src/Semesterproject_3_Mobile_Robot_Systems
-12.14 Type: PYTHONPATH="$PWD:$PYTHONPATH" python3 Main/main.py
+12.14 Type: PYTHONPATH="$PWD:$PYTHONPATH" python3 -m Main.main --ros-args -p rate_hz:=40.0 (You can change rate_hz here)
 12.15 Program should run!

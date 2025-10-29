@@ -1,6 +1,7 @@
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
 import rclpy
+import time
 
 # Basic function to test robot movement
 def testRobotMovement():
@@ -28,8 +29,26 @@ def runRobotWithRoutePlanner():
     rclpy.init()
     node = RoutePlanner()
     try:
-        command = "00000001" + "00000010"  # dest=2, supplies=2
-        node.chooseRoute(command)
+        # dest=1, supplies=0
+        command1 = "00000000" + "00000000"
+        node.chooseRoute(command1)
+        time.sleep(3)
+
+        # dest=2, supplies=1
+        command2 = "00000001" + "00000001"
+        node.chooseRoute(command2)
+        time.sleep(3)
+
+        # dest=3, supplies=1
+        command3 = "00000010" + "00000001"
+        node.chooseRoute(command3)
+        time.sleep(3)
+
+        # dest=4, supplies=2
+        command4 = "00000011" + "00000010"
+        node.chooseRoute(command4)
+        time.sleep(3)
+
     except KeyboardInterrupt:
         pass
     finally:
@@ -37,6 +56,7 @@ def runRobotWithRoutePlanner():
         node.destroy_node()
         rclpy.shutdown()
 
+    
 def main():
     runRobotWithRoutePlanner()
     #testRobotMovement()
