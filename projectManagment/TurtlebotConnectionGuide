@@ -38,7 +38,7 @@
 11.6 Enter linear velocity (no more than 0.22), and angular velocity (no limit)
 
 12. Uploading code, and building project
-12.1 From the turtlebots local terminal type: scree, and press enter
+12.1 From the turtlebots local terminal type: screen, and press enter
 12.2 use ctrl + a + c, to create two additional screens (We need an A,B and a C screen)
 12.3 Navigate to screen C (ctrl + a + p and ctrl + a + n (for previous screen and next screen))
 12.4 type: source /opt/ros/jazzy/setup.bash
