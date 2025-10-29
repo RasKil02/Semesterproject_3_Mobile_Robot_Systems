@@ -38,8 +38,8 @@ def runRobotWithRoutePlanner():
         rclpy.shutdown()
 
 def main():
-    #runRobotWithRoutePlanner()
-    testRobotMovement()
+    runRobotWithRoutePlanner()
+    #testRobotMovement()
 
 # Run the main function when this script is executed
 if __name__ == '__main__':
