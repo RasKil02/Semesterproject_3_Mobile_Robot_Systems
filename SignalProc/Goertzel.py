@@ -1,33 +1,41 @@
 import numpy as np
 import math
-from typing import Iterable, Dict, List
+from typing import Iterable, Dict
 
 class GoertzelAlgorithm:
     def __init__(self, fs: int, block: int, target_freqs: Iterable[float]):
-        self.fs = fs
-        self.N = block
+        self.fs = int(fs)
+        self.N = int(block)
         self.target_freqs = list(target_freqs)
-        self.coefficients = self._compute_coefficients()
+        self.coefficients = self._compute_coefficients()  # dict: f -> coeff
 
     def _compute_coefficients(self) -> Dict[float, float]:
         coeffs: Dict[float, float] = {}
         for f in self.target_freqs:
-            k = int(round(self.N * f / self.fs))
-            omega = (2.0 * math.pi * k) / self.N
+            omega = 2.0 * math.pi * f / self.fs
             coeffs[f] = 2.0 * math.cos(omega)
         return coeffs
 
     def process(self, signal: np.ndarray) -> Dict[float, float]:
         """Returnér power for hver target-frekvens på en blok (længde N)."""
-        x = signal.astype(float)
+        x = np.asarray(signal, dtype=np.float64).squeeze()
+        if x.ndim != 1:
+            raise ValueError("GoertzelAlgorithm.process forventer 1D signal.")
+        if len(x) != self.N:
+            raise ValueError(f"Bloklængde mismatch: len(x)={len(x)} men N={self.N}.")
+
+        # DC-fjernelse (vindue laves i main; ingen vindue her)
+        x = x - float(np.mean(x))
+
         results: Dict[float, float] = {}
-        for f, coeff in self.coefficients.items():
-            s1 = 0.0; s2 = 0.0
+        for f in self.target_freqs:
+            coeff = self.coefficients[f]
+            s_prev = 0.0
+            s_prev2 = 0.0
             for xn in x:
-                s = xn + coeff * s1 - s2
-                s2, s1 = s1, s
-            power = s2*s2 + s1*s1 - coeff*s1*s2
-            results[f] = power / (len(x)**2)  # let normalisering
+                s = xn + coeff * s_prev - s_prev2
+                s_prev2, s_prev = s_prev, s
+            # Stabil standard-power
+            power = s_prev*s_prev + s_prev2*s_prev2 - coeff*s_prev*s_prev2
+            results[f] = power
         return results
-    
-    

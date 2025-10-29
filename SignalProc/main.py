@@ -7,11 +7,11 @@ from BandpassFilter import BandPassFilter
 from Goertzel import GoertzelAlgorithm
 
 # Parametre for DTMF-detektion
-MIN_DB   = -60.0   # absolut minimumsniveau pr. gruppe (dB) for at acceptere
-SEP_DB   = 6.0     # min. afstand til næstbedste i samme gruppe (dB)
-TWIST_DB = 8.0     # max forskel mellem row- og col-energi (dB)
-HOLD_MIN = 2       # antal blokke i træk før vi udsender et symbol
-GUARD_MS = 60      # mindste tid mellem samme symbol
+MIN_DB   = -20.0   # absolut minimumsniveau pr. gruppe (dB) for at acceptere
+SEP_DB   = 5       # min. afstand til næstbedste i samme gruppe (dB)
+TWIST_DB = 8       # max forskel mellem row- og col-energi (dB)
+DOM_DB   = 4       # min. dominerende forskel (dB) for at acceptere
+SNR_DB   = 8      # min. SNR (Signal-To-Noise Ratio) i dB for at acceptere
 
 
 # DTMF-frekvenser og tabel
@@ -28,58 +28,146 @@ def hann(N: int):
     n = np.arange(N)
     return 0.5 * (1 - np.cos(2*np.pi*n/(N-1)))
 
-def db(x: float) -> float:
+def db10(x: float) -> float:
     return 10*np.log10(max(x, 1e-12))
 
 class DigitStabilizer:
     """Kræv hold_min blokke og guard mellem hits for rene impulser."""
-    def __init__(self, hold_min=2, guard_ms=60):
-        self.hold_min = hold_min
-        self.guard_ms = guard_ms
-        self.last = '?'
-        self.hold = 0
-        self.last_emit_ms = -1.0
+    # hold_ms = tonens minimum varighed for at kunne detekteres
+    # miss_ms = hvor længe et udfald må vare uden at miste låsen
+    # gap_ms  = minimum stilhed mellem to symboler
+    def __init__(self, hold_ms, miss_ms, gap_ms):
+        self.hold_ms = float(hold_ms)
+        self.miss_ms = float(miss_ms)
+        self.gap_ms  = float(gap_ms)
 
-    def update(self, sym, now_ms):
-        if sym == '?':
-            self.last = '?'
-            self.hold = 0
-            return None
-        if sym == self.last:
-            self.hold += 1
-            if self.hold == self.hold_min:
-                if self.last_emit_ms < 0 or (now_ms - self.last_emit_ms) > self.guard_ms:
-                    self.last_emit_ms = now_ms
-                    return sym
-            return None
-        else:
-            self.last = sym
-            self.hold = 1
+        self.state = "IDLE"      # IDLE | CANDIDATE | LOCKED | GAP
+        self.curr = None         # kandidat/låst symbol
+        self.last_locked = None    # sidste låste symbol
+        self.t_start = None      # starttid for kandidat
+        self.t_last_seen = None  # sidste gang vi så curr (til miss_ms)
+        self.t_emit = None       # tidspunkt for seneste emit
+        self.gap_start = None    # starttid for GAP
+
+    def update(self, sym: str, now_ms: float):
+        # Normalisér til gyldige symboler
+        if sym not in "1234567890ABCD*#":
+            sym = "?"
+
+        if self.state == "IDLE":
+            if sym == "?":
+                return None
+            # start kandidat
+            self.state = "CANDIDATE"
+            self.curr = sym
+            self.t_start = now_ms
+            self.t_last_seen = now_ms
             return None
 
-def analyze_and_plot(audio: np.ndarray, fs: int, block: int = 205,
-                     lowcut=650, highcut=1750, order=6, show_resp=False):
-    from BandpassFilter import BandPassFilter
-    from Goertzel import GoertzelAlgorithm
+    # --- CANDIDATE ---------------------------------------------------------
+        if self.state == "CANDIDATE":
+            if sym == self.curr:
+                self.t_last_seen = now_ms
+                # krav: stabil tid >= hold_ms
+                if (now_ms - self.t_start) >= self.hold_ms:
+                    # lås og emit én gang
+                    self.state = "LOCKED"
+                    self.t_emit = now_ms
+                    self.last_locked = self.curr
+                    return self.curr
+                return None
+            elif sym == "?":
+                # mistet før lås → reset
+                self.state = "IDLE"
+                self.curr = None
+                self.t_start = None
+                self.t_last_seen = None
+                self.gap_start = None
+                return None
+            else:
+                # ny kandidat
+                self.curr = sym
+                self.t_start = now_ms
+                self.t_last_seen = now_ms
+                return None
+
+    # --- LOCKED ------------------------------------------------------------
+        if self.state == "LOCKED":
+            if sym == self.curr:
+                # stadig låst; ingen ny emit
+                self.t_last_seen = now_ms
+                return None
+            elif sym == "?":
+                # tillad korte udfald uden at slippe låsen
+                if (now_ms - self.t_last_seen) > self.miss_ms:
+                    # slip lås og kræv stilhed (GAP) før næste symbol
+                    self.state = "GAP"
+                    self.gap_start = now_ms
+                return None
+            else:
+                # andet symbol dukker op uden stilhed -> ny kandidat    
+                self.state = "CANDIDATE"
+                self.curr = sym
+                self.t_start = now_ms
+                self.t_last_seen = now_ms
+                return None
+
+    # --- GAP ---------------------------------------------------------------
+        if self.state == "GAP":
+            # vi kræver stilhed i mindst gap_ms før nyt symbol må overvejes
+            if sym == "?":
+                if self.gap_start is None:
+                    self.gap_start = now_ms
+                if (now_ms - (self.gap_start or now_ms)) >= self.gap_ms:
+                    # klar til ny kandidat
+                    self.state = "IDLE"
+                    self.curr = None
+                    self.t_start = None
+                    self.t_last_seen = None
+                return None
+            else:
+                # Hvis samme som sidst låste: kræv stilhed (hindrer dobbeltskud)
+                if self.last_locked is not None and sym == self.last_locked:
+                    self.t_last_seen = now_ms
+                    return None 
+                else:
+                    # Start ny kandidat med det nye symbol
+                    self.state = "CANDIDATE"
+                    self.curr = sym
+                    self.t_start = now_ms
+                    self.t_last_seen = now_ms
+                return None
+            return None
+
+def analyze(audio: np.ndarray, fs: int, block: int, hop: int = None,
+                     lowcut=620, highcut=1700, order=6, show_resp=False):
+    if hop is None:
+        hop = block  # ingen overlap som standard
 
     bp = BandPassFilter(fs, lowcut, highcut, order)
     if show_resp: bp.plot_freq_response()
     g_low  = GoertzelAlgorithm(fs, block, FREQS_LOW)
     g_high = GoertzelAlgorithm(fs, block, FREQS_HIGH)
     win = hann(block)
-    stab = DigitStabilizer()
+    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
 
     t_centers, row_db, col_db, emits = [], [], [], []
 
-    nblocks = len(audio)//block
-    for bi in range(nblocks):
-        seg = audio[bi*block:(bi+1)*block].astype(float)
-        seg -= seg.mean()
-        seg *= win
-        seg_f = bp.process(seg)
+    detected_digits = [] # liste af (digit)
 
-        E_low  = g_low.process(seg_f)
-        E_high = g_high.process(seg_f)
+    nblocks = 1 + max(0, (len(audio) - block) // hop)
+    for bi in range(nblocks):
+        start = bi*hop
+        seg = audio[start:start+block].astype(float)
+        if len(seg) < block:
+            break  # ufuldstændig blok i slutningen
+
+        seg -= seg.mean()        # fjern DC
+        seg_f = bp.process(seg)  # bandpass-filter
+        seg_f *= win             # vindue
+
+        E_low  = g_low.process(seg_f)    # energi pr. frekvens
+        E_high = g_high.process(seg_f)   # energi pr. frekvens
 
         # SORTÉR for at få både #1 og #2 i hver gruppe
         low_sorted  = sorted(FREQS_LOW,  key=lambda f: E_low[f],  reverse=True)
@@ -87,49 +175,56 @@ def analyze_and_plot(audio: np.ndarray, fs: int, block: int = 205,
         lf, l2 = low_sorted[0],  low_sorted[1]
         hf, h2 = high_sorted[0], high_sorted[1]
 
-        l_db, l2_db = db(E_low[lf]),  db(E_low[l2])
-        h_db, h2_db = db(E_high[hf]), db(E_high[h2])
+        blk_db = db10(np.mean(seg_f**2))
 
-        t = (bi*block + block/2)/fs
+        l_abs_db = db10(E_low[lf])
+        h_abs_db = db10(E_high[hf])
+        l2_db    = db10(E_low[l2])
+        h2_db    = db10(E_high[h2])
+
+        # Relative dB ift. blok-RMS (matcher din ABS-test)
+        l_rel_db = l_abs_db - blk_db
+        h_rel_db = h_abs_db - blk_db
+
+        t = (start + block/2) / fs  # center-tid i sek
         t_centers.append(t)
-        row_db.append(l_db); col_db.append(h_db)
+        row_db.append(l_rel_db); col_db.append(h_rel_db)
 
-        abs_ok  = (l_db > MIN_DB) and (h_db > MIN_DB)
-        sep_ok  = (l_db - l2_db > SEP_DB) and (h_db - h2_db > SEP_DB)
-        twist_ok= abs(l_db - h_db) < TWIST_DB
+        low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + 1e-12
+        high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + 1e-12
+        snr_low_db  = db10((E_low[lf]) / low_noise)
+        snr_high_db = db10((E_high[hf]) / high_noise)
+        snr_ok = (snr_low_db >= SNR_DB) and (snr_high_db >= SNR_DB)
 
-        sym = LUT.get((lf, hf), '?') if (abs_ok and sep_ok and twist_ok) else '?'
+        sep_ok   = (l_abs_db - l2_db > SEP_DB) and (h_abs_db - h2_db > SEP_DB)
+        abs_ok   = (l_abs_db - blk_db > MIN_DB) and (h_abs_db - blk_db > MIN_DB)
+        twist = (l_abs_db - h_abs_db)
+        twist_ok = (-TWIST_DB <= twist <= TWIST_DB/2) # tillad lidt mere lavfrekvens-domineret
+
+        # Dominans
+        l_dom_db = db10(E_low[lf] / low_noise)
+        h_dom_db = db10(E_high[hf] / high_noise)
+        dom_ok = (l_dom_db >= DOM_DB) and (h_dom_db >= DOM_DB)
+
+        good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
+        sym = LUT.get((lf, hf), "?") if good else "?"
+
         out = stab.update(sym, now_ms=t*1000.0)
         if out:
-            emits.append((t, out))
-            print(f"[{t:6.3f}s] DTMF: {out}  (low={lf}Hz, high={hf}Hz, "
-                  f"row={l_db:.1f} dB, col={h_db:.1f} dB)")
+            if not detected_digits or detected_digits[-1] != out:
+                detected_digits.append(out)
 
-    # -------- plots --------
-    fig, axes = plt.subplots(2, 1, figsize=(10,7), sharex=True)
-    axes[0].plot(t_centers, row_db, label="Row max (dB)")
-    axes[0].plot(t_centers, col_db, label="Col max (dB)")
-    axes[0].axhline(MIN_DB, color='k', ls='--', lw=1, label=f"ABS {MIN_DB} dB")
-    axes[0].set_title("Max-energi pr. blok (efter band-pass)")
-    axes[0].set_ylabel("dB"); axes[0].grid(True); axes[0].legend(loc="upper right")
-
-    imp_t = np.array(t_centers); imp_y = np.zeros_like(imp_t)
-    for t_emit, _sym in emits:
-        idx = (np.abs(imp_t - t_emit)).argmin()
-        imp_y[idx] = 1.0
-    axes[1].stem(imp_t, imp_y)
-    for t_emit, sym in emits:
-        axes[1].annotate(sym, (t_emit, 1.02), ha="center", va="bottom", fontsize=12)
-    axes[1].set_title("DTMF-detektion (impulser)")
-    axes[1].set_xlabel("Tid [s]"); axes[1].set_ylim(0,1.2); axes[1].grid(True)
-
-    plt.tight_layout(); plt.show()
+    if detected_digits:
+        print("\n--- Detected digits ---")
+        print("".join(detected_digits))
+    else:
+        print("--- No digits detected ---")
 
 def main():
     ap = argparse.ArgumentParser(description="DTMF analyse (optag og plot impulser).")
-    ap.add_argument("--duration", type=float, default=5.0, help="Optagetid i sek.")
-    ap.add_argument("--fs", type=int, default=48000, help="Samplerate (Hz)")
-    ap.add_argument("--block", type=int, default=205, help="Bloklængde til Goertzel")
+    ap.add_argument("--duration", type=float, default=4.0, help="Optagetid i sek.")
+    ap.add_argument("--fs", type=int, default=8000, help="Samplerate (Hz)")
+    ap.add_argument("--block", type=int, default=0, help="Bloklængde i samples (0=4ms)")
     ap.add_argument("--out", type=str, default="output.wav", help="Gem WAV som")
     ap.add_argument("--show-filter", action="store_true", help="Vis filterets frekvensrespons")
     args = ap.parse_args()
@@ -138,11 +233,11 @@ def main():
     sampler = AudioSampler(args.duration, args.fs, args.out)
     audio = sampler.record_audio()
     sampler.save_audio()
-    sampler.plot_waveform()
 
     # 2) Analyse + impulser
-    block = int(round(0.04 * sampler.fs))
-    analyze_and_plot(audio, fs=sampler.fs, block=block, show_resp=args.show_filter)
+    block = args.block if args.block > 0 else int(0.030 * sampler.fs) # 30 ms blok
+    hop = max(1, int(0.075 * sampler.fs))               # 7.5 ms hop (overlap)
+    analyze(audio, fs=sampler.fs, block=block, hop=hop, show_resp=args.show_filter)
 
 if __name__ == "__main__":
     main()
