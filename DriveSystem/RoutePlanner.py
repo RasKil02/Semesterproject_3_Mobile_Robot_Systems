@@ -47,7 +47,7 @@ class RoutePlanner(Node):
     def rotate(self, angular_speed: float, duration: float):
         self.publish_vw_for_duration(0.0, angular_speed, duration)
         self.stop(0.3)
-
+    
     def dropSupply(self, supplies: int):
         if supplies <= 0:
             self.get_logger().info('No supplies to drop')
@@ -57,18 +57,18 @@ class RoutePlanner(Node):
 
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
         self.driveStraight(speed, duration)
-        self.rotate(angular_speed, 1.0)
+        self.rotate(angular_speed, 2.0)
         self.dropSupply(supplies)
         self.ReturnHome(duration)
 
     def DegreesToAngularSpeed(self, degrees: float) -> float:
         radians = degrees * (3.14159265 / 180.0)
-        angular_speed = radians / 1.0  # Assuming we want to complete the rotation in 1 second
+        angular_speed = radians / 2.0  # Assuming we want to complete the rotation in 1 second
         return angular_speed
     
     def ReturnHome(self, duration: float):
         self.get_logger().info('Returning Home')
-        self.rotate(self.DegreesToAngularSpeed(-90), 1.0)  # Rotate -90 degrees
+        self.rotate(self.DegreesToAngularSpeed(-90), 2.0)  # Rotate -90 degrees
         self.driveStraight(-0.15, duration)  # Drive straight for 8 seconds at 0.15 m/s
 
     def chooseRoute(self, command: str):
@@ -77,16 +77,16 @@ class RoutePlanner(Node):
         rotation = self.DegreesToAngularSpeed(90)
 
         if dest == 1:
-            self.executeRoute(supplies, 0.15, 2, rotation) # 0.22 is max speed
+            self.executeRoute(supplies, 0.8, 2, rotation) # 0.22 is max speed
             self.get_logger().info('Routing to Location 1')
         elif dest == 2:
-            self.executeRoute(supplies, 0.15, 4, rotation)
+            self.executeRoute(supplies, 0.8, 4, rotation)
             self.get_logger().info('Routing to Location 2')
         elif dest == 3:
-            self.executeRoute(supplies, 0.15, 6, rotation)
+            self.executeRoute(supplies, 0.8, 6, rotation)
             self.get_logger().info('Routing to Location 3')
         elif dest == 4:
-            self.executeRoute(supplies, 0.15, 8, rotation)
+            self.executeRoute(supplies, 0.8, 8, rotation)
             self.get_logger().info('Routing to Location 4')
         else:
             self.get_logger().info('Unknown Destination')
