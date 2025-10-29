@@ -6,7 +6,7 @@ from geometry_msgs.msg import TwistStamped
 class RoutePlanner(Node):
     def __init__(self):
         super().__init__('route_planner')
-        self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.rate_hz = 20.0
         self.dt = 1.0 / self.rate_hz
 
