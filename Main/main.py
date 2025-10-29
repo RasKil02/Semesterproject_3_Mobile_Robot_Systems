@@ -1,5 +1,5 @@
-from DriveSystem.NotUsed import MoveTest # I think this is how to import MoveTest
-from DriveSystem import RoutePlanner
+from DriveSystem.NotUsed.MoveTest import MoveTest
+from DriveSystem.RoutePlanner import RoutePlanner
 import rclpy
 
 # Basic function to test robot movement
@@ -28,10 +28,8 @@ def runRobotWithRoutePlanner():
     rclpy.init()
     node = RoutePlanner()
     try:
-        # Example command: first 8 bits = destination, next 8 bits = supplies
         command = "00000001" + "00000010"  # dest=2, supplies=2
-        supplies = node.supplyDecision(command)
-        node.chooseRoute(command, supplies)
+        node.chooseRoute(command)
     except KeyboardInterrupt:
         pass
     finally:
@@ -40,7 +38,8 @@ def runRobotWithRoutePlanner():
         rclpy.shutdown()
 
 def main():
-    runRobotWithRoutePlanner()
+    #runRobotWithRoutePlanner()
+    testRobotMovement()
 
 # Run the main function when this script is executed
 if __name__ == '__main__':
