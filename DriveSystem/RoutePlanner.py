@@ -59,22 +59,34 @@ class RoutePlanner(Node):
         self.driveStraight(speed, duration)
         self.rotate(angular_speed, 1.0)
         self.dropSupply(supplies)
+        self.ReturnHome(duration)
+
+    def DegreesToAngularSpeed(self, degrees: float) -> float:
+        radians = degrees * (3.14159265 / 180.0)
+        angular_speed = radians / 1.0  # Assuming we want to complete the rotation in 1 second
+        return angular_speed
+    
+    def ReturnHome(self, duration: float):
+        self.get_logger().info('Returning Home')
+        self.rotate(self.DegreesToAngularSpeed(-90), 1.0)  # Rotate -90 degrees
+        self.driveStraight(-0.15, duration)  # Drive straight for 8 seconds at 0.15 m/s
 
     def chooseRoute(self, command: str):
         dest = self.destDecision(command)
         supplies = self.supplyDecision(command)
+        rotation = self.DegreesToAngularSpeed(90)
 
         if dest == 1:
-            self.executeRoute(supplies, 0.1, 2, 0.5)
+            self.executeRoute(supplies, 0.15, 2, rotation) # 0.22 is max speed
             self.get_logger().info('Routing to Location 1')
         elif dest == 2:
-            self.executeRoute(supplies, 0.1, 4, 0.5)
+            self.executeRoute(supplies, 0.15, 4, rotation)
             self.get_logger().info('Routing to Location 2')
         elif dest == 3:
-            self.executeRoute(supplies, 0.1, 6, 0.5)
+            self.executeRoute(supplies, 0.15, 6, rotation)
             self.get_logger().info('Routing to Location 3')
         elif dest == 4:
-            self.executeRoute(supplies, 0.1, 8, 0.5)
+            self.executeRoute(supplies, 0.15, 8, rotation)
             self.get_logger().info('Routing to Location 4')
         else:
             self.get_logger().info('Unknown Destination')

@@ -28,10 +28,8 @@ def runRobotWithRoutePlanner():
     rclpy.init()
     node = RoutePlanner()
     try:
-        command1 = "00000000" + "00000010"  # dest=1, supplies=2
-        node.chooseRoute(command1)
-        command4 = "00000011" + "00000000" # dest=4, supplies=1
-        node.chooseRoute(command4)
+        command3 = "00000010" + "00000000" # dest=3, supplies=1
+        node.chooseRoute(command3)
     except KeyboardInterrupt:
         pass
     finally:
