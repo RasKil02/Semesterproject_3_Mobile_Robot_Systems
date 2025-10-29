@@ -57,6 +57,7 @@ class RoutePlanner(Node):
 
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
         self.driveStraight(speed, duration)
+        time.sleep(2)
         self.rotate(angular_speed, 2.0)
         self.dropSupply(supplies)
         self.ReturnHome(duration)
