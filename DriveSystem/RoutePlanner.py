@@ -57,8 +57,8 @@ class RoutePlanner(Node):
 
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
         self.driveStraight(speed, duration)
-        time.sleep(2)
         self.rotate(angular_speed, 2.0)
+        time.sleep(2)
         self.dropSupply(supplies)
         self.ReturnHome(duration)
 
@@ -78,16 +78,16 @@ class RoutePlanner(Node):
         rotation = self.DegreesToAngularSpeed(90)
 
         if dest == 1:
-            self.executeRoute(supplies, 0.8, 2, rotation) # 0.22 is max speed
+            self.executeRoute(supplies, 0.08, 2, rotation) # 0.22 is max speed
             self.get_logger().info('Routing to Location 1')
         elif dest == 2:
-            self.executeRoute(supplies, 0.8, 4, rotation)
+            self.executeRoute(supplies, 0.08, 4, rotation)
             self.get_logger().info('Routing to Location 2')
         elif dest == 3:
-            self.executeRoute(supplies, 0.8, 6, rotation)
+            self.executeRoute(supplies, 0.08, 6, rotation)
             self.get_logger().info('Routing to Location 3')
         elif dest == 4:
-            self.executeRoute(supplies, 0.8, 8, rotation)
+            self.executeRoute(supplies, 0.08, 8, rotation)
             self.get_logger().info('Routing to Location 4')
         else:
             self.get_logger().info('Unknown Destination')
