@@ -70,7 +70,7 @@ class RoutePlanner(Node):
     def ReturnHome(self, duration: float):
         self.get_logger().info('Returning Home')
         self.rotate(self.DegreesToAngularSpeed(-90), 2.0)  # Rotate -90 degrees
-        self.driveStraight(-0.15, duration)  # Drive straight for 8 seconds at 0.15 m/s
+        self.driveStraight(-0.08, duration)  # Drive straight for 8 seconds at 0.15 m/s
 
     def chooseRoute(self, command: str):
         dest = self.destDecision(command)
