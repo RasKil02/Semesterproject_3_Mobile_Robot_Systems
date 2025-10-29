@@ -6,8 +6,9 @@ from geometry_msgs.msg import TwistStamped
 class RoutePlanner(Node):
     def __init__(self):
         super().__init__('route_planner')
-        self.pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
-        self.rate_hz = 20.0
+        self.declare_parameter('rate_hz', 20.0)
+        self.rate_hz = float(self.get_parameter('rate_hz').value)
+        self.rate_hz = max(1.0, min(self.rate_hz, 100.0))  # bounds
         self.dt = 1.0 / self.rate_hz
 
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
