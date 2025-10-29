@@ -87,7 +87,7 @@ class RoutePlanner(Node):
     def chooseRoute(self, command: str):
         dest = self.destDecision(command)
         supplies = self.supplyDecision(command)
-        rotation_speed = self.DegreesToAngularSpeed(90, 2.0)
+        rotation_speed = self.DegreesToAngularSpeed(90)
 
         speed = 0.08  # m/s
         durations = {1: 2.0, 2: 4.0, 3: 6.0, 4: 8.0}
