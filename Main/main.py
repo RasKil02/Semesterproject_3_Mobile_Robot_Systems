@@ -30,7 +30,6 @@ def runRobotWithRoutePlanner():
     try:
         # Example command: first 8 bits = destination, next 8 bits = supplies
         command = "00000001" + "00000010"  # dest=2, supplies=2
-        dest = node.destDecision(command)
         supplies = node.supplyDecision(command)
         node.chooseRoute(command, supplies)
     except KeyboardInterrupt:
