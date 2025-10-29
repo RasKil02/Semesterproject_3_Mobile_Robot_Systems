@@ -29,22 +29,26 @@ def runRobotWithRoutePlanner():
     rclpy.init()
     node = RoutePlanner()
     try:
-        command1 = "00000001" + "00000000" # dest=1, supplies=0
+        # dest=1, supplies=0
+        command1 = "00000000" + "00000000"
         node.chooseRoute(command1)
         time.sleep(3)
-        
-        command2 = "00000010" + "00000001" # dest=2
+
+        # dest=2, supplies=1
+        command2 = "00000001" + "00000001"
         node.chooseRoute(command2)
         time.sleep(3)
-        
-        command3 = "00000010" + "00000000" # dest=3, supplies=1
+
+        # dest=3, supplies=1
+        command3 = "00000010" + "00000001"
         node.chooseRoute(command3)
         time.sleep(3)
-        
-        command4 = "00000100" + "00000010" # dest=4, supplies=2
+
+        # dest=4, supplies=2
+        command4 = "00000011" + "00000010"
         node.chooseRoute(command4)
         time.sleep(3)
-        
+
     except KeyboardInterrupt:
         pass
     finally:
@@ -52,6 +56,7 @@ def runRobotWithRoutePlanner():
         node.destroy_node()
         rclpy.shutdown()
 
+    
 def main():
     runRobotWithRoutePlanner()
     #testRobotMovement()
