@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sounddevice as sd
 import argparse
 from scipy.io import wavfile
+from scipy.signal import resample_poly
 
 class AudioSampler:
     def __init__(self, duration, fs, output):
@@ -10,21 +11,35 @@ class AudioSampler:
         self.fs = fs
         self.output = output
         self.audio = None
-
+    '''
     def record_audio(self, device=None):
-        # Hvis ingen device angivet, find automatisk "USB Audio"
+        # Find automatisk et USB input device
         if device is None:
             for i, d in enumerate(sd.query_devices()):
-                if "USB Audio" in d['name'] and d['max_input_channels'] > 0:
+                if "usb" in d['name'].lower() and d['max_input_channels'] > 0:
                     device = i
                     break
+            if device is None:
+                raise RuntimeError("Ingen USB mikrofon fundet!")
 
-        sd.default.device = (device, None)
-        sd.default.samplerate = self.fs
+        # Behold nuværende output device
+        cur_in, cur_out = sd.default.device
+        sd.default.device = (device, cur_out)
 
-        print(f"Recording from device {device} for {self.duration} seconds at {self.fs} Hz...")
-        self.audio = sd.rec(int(self.duration * self.fs),
-                            samplerate=self.fs, channels=1, dtype='float32')
+        info = sd.query_devices(device, 'input')
+        native_fs = float(info['default_samplerate'])
+        print(f"[Device] name={info['name']}, native_fs={native_fs} Hz")
+
+        target_fs = 8000.0  # telephony standard
+        self.fs = int(target_fs)
+
+        rec_fs = int(native_fs)
+        print(f"[FS] Recording at {rec_fs} Hz, will resample to {self.fs} Hz if needed.")
+
+        print(f"Recording from device {device} for {self.duration} s...")
+        sd.default.samplerate = rec_fs
+        self.audio = sd.rec(int(self.duration * rec_fs),
+                            samplerate=rec_fs, channels=1, dtype='float32')
         sd.wait()
 
         # niveau-diagnostik
@@ -33,8 +48,82 @@ class AudioSampler:
         rms  = float(np.sqrt(np.mean(a*a)))
         print(f"[Audio] peak={peak:.6f}, rms={rms:.6f}")
         print("Recording complete.")
-        return self.audio.flatten()
 
+        # Resample hvis nødvendigt
+        if rec_fs != self.fs:
+            g = np.gcd(int(rec_fs), int(self.fs))
+            up, down = self.fs // g, int(rec_fs) // g
+            print(f"[Resample] {rec_fs} Hz -> {self.fs} Hz (up={up}, down={down})")
+            a = resample_poly(a, up, down).astype(np.float32)
+        else:
+            a = a.astype(np.float32)
+
+        self.audio = a
+        return self.audio
+    
+    
+    # record_audio from computer microphone
+    '''
+    def record_audio(self, device=None):
+        # Hvis ingen device angivet, find automatisk standard input device
+        if device is None:
+            device = sd.default.device[0]  # default input device
+
+        # Behold eksisterende output-device (sæt ikke None)
+        cur_in, cur_out = sd.default.device
+        sd.default.device = (device, cur_out)
+
+        # Hent device-info og log
+        info = sd.query_devices(device, 'input')
+        native_fs = float(info['default_samplerate'])
+        print(f"[Device] name={info['name']}, default_samplerate={native_fs} Hz")
+
+        # Vælg strategi:
+        USE_TELEPHONY_FS = True  # True = A (8 kHz), False = B (native fs)
+
+        if USE_TELEPHONY_FS:
+            target_fs = 8000.0
+            # Prøv at tjekke om device kan køre target_fs
+            try:
+                sd.check_input_settings(device=device, samplerate=target_fs, channels=1, dtype='float32')
+                self.fs = int(target_fs)
+                print(f"[FS] Using telephony fs={self.fs} Hz")
+                rec_fs = self.fs
+            except Exception as e:
+                # fallback: optag i native og resampl bagefter
+                self.fs = int(target_fs)  # behold “behandlings-fs” som 8 kHz
+                rec_fs = int(native_fs)
+                print(f"[FS] Device cannot do {target_fs} Hz directly; recording at {rec_fs} Hz and resampling to {self.fs} Hz. ({e})")
+        else:
+            # Brug native hele vejen
+            self.fs = int(native_fs)
+            rec_fs = self.fs
+            print(f"[FS] Using device native fs={self.fs} Hz")
+
+        # Optag med rec_fs (den reelt brugte samplerate)
+        print(f"Recording from device {device} for {self.duration} s at {rec_fs} Hz...")
+        sd.default.samplerate = rec_fs
+        self.audio = sd.rec(int(self.duration * rec_fs),
+                            samplerate=rec_fs, channels=1, dtype='float32')
+        sd.wait()
+        # niveau-diagnostik
+        a = self.audio.squeeze().astype(float)
+        peak = float(np.max(np.abs(a)))
+        rms  = float(np.sqrt(np.mean(a*a)))
+        print(f"[Audio] peak={peak:.6f}, rms={rms:.6f}")
+        print("Recording complete.")
+
+        # Resampl hvis nødvendigt
+        a = self.audio.flatten().astype(np.float32)
+        if rec_fs != self.fs:
+            from scipy.signal import resample_poly
+            g = np.gcd(int(rec_fs), int(self.fs))
+            up, down = self.fs // g, int(rec_fs) // g
+            print(f"[Resample] {rec_fs} Hz -> {self.fs} Hz (up={up}, down={down})")
+            a = resample_poly(a, up, down).astype(np.float32)
+        self.audio = a
+        return self.audio
+    
     def save_audio(self):
         import numpy as np
         from scipy.io import wavfile
@@ -46,6 +135,7 @@ class AudioSampler:
         wavfile.write(self.output, self.fs, (a*32767).astype(np.int16))
         print(f"Audio saved to {self.output} (normalized)")
 
+
     def plot_waveform(self):
         if self.audio is None:
             raise ValueError("No audio recorded to plot.")
@@ -56,4 +146,5 @@ class AudioSampler:
         plt.ylabel("Amplitude")
         plt.grid()
         plt.show()
+    
 
