@@ -242,32 +242,3 @@ class DTMFDetector:
         top = sorted(freqs_tuple, key=lambda f: energy_dict[f], reverse=True)
         return top[0], top[1]
 
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--duration", type=float, default=4.0)
-    ap.add_argument("--fs", type=int, default=8000)
-    ap.add_argument("--out", type=str, default="output.wav")
-    ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.5)
-    args = ap.parse_args()
-
-    detector = DTMFDetector(
-        fs=args.fs,
-        block_ms=args.block_ms,
-        hop_ms=args.hop_ms,
-        lowcut=620, highcut=1700, bp_order=4,
-        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+4, twist_neg_db=-8
-    )
-
-    # injicér stabilizer (hold/miss/gap kan du stadig tune frit)
-    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
-
-    # optag og detektér i ét hug:
-    digits = detector.record_and_detect(args.duration, args.out, stabilizer=stab)
-    print("\n--- Detected digits ---")
-    print(digits if digits else "(none)")
-
-if __name__ == "__main__":
-    main()
