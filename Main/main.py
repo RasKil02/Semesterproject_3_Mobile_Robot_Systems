@@ -1,7 +1,14 @@
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
+from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
 import time
+
+def playCommand():
+    protocol = Protocol()
+    command = protocol.play_DTMF_command("0000")
+    print("Command received:", command)
+    # Here you would add code to process and execute the command
 
 # Basic function to test robot movement
 def testRobotMovement():
@@ -30,23 +37,8 @@ def runRobotWithRoutePlanner():
     node = RoutePlanner()
     try:
         # dest=1, supplies=0
-        command1 = "00000000" + "00000000"
+        command1 = "000000" + "000000"
         node.chooseRoute(command1)
-        time.sleep(3)
-
-        # dest=2, supplies=1
-        command2 = "00000001" + "00000001"
-        node.chooseRoute(command2)
-        time.sleep(3)
-
-        # dest=3, supplies=1
-        command3 = "00000010" + "00000001"
-        node.chooseRoute(command3)
-        time.sleep(3)
-
-        # dest=4, supplies=2
-        command4 = "00000011" + "00000010"
-        node.chooseRoute(command4)
         time.sleep(3)
 
     except KeyboardInterrupt:
@@ -55,11 +47,26 @@ def runRobotWithRoutePlanner():
         node.stop()
         node.destroy_node()
         rclpy.shutdown()
+        
+def readCommand():
+    pass
 
-    
+def convertCommand(command: str) -> str:
+    if len(command) % 2:
+        raise ValueError("Længden skal være lige (par af cifre).")
+    parts = []
+    for i in range(0, len(command), 2):
+        a, b = command[i], command[i+1]
+        if a not in "01234567" or b not in "01234567":
+            raise ValueError("Kun 0–7 er tilladt.")
+        parts.append(f'"{format(int(a), "03b")}{format(int(b), "03b")}"')
+    return " + ".join(parts)
+
 def main():
+    playCommand()
+    readCommand()
+    convertCommand()
     runRobotWithRoutePlanner()
-    #testRobotMovement()
 
 # Run the main function when this script is executed
 if __name__ == '__main__':
