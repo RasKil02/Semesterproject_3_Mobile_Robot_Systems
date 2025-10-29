@@ -1,7 +1,7 @@
 import time
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 
 class RoutePlanner(Node):
     def __init__(self):
@@ -10,18 +10,23 @@ class RoutePlanner(Node):
         self.rate_hz = 20.0
         self.dt = 1.0 / self.rate_hz
 
+    def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
+        msg = TwistStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'base_link'
+        msg.twist.linear.x = float(v)
+        msg.twist.angular.z = float(w)
+        return msg
+
     def publish_vw_for_duration(self, v: float, w: float, duration: float):
         t_end = time.time() + max(0.0, float(duration))
         while rclpy.ok() and time.time() < t_end:
-            msg = Twist()
-            msg.linear.x = float(v)
-            msg.angular.z = float(w)
-            self.pub.publish(msg)
+            self.pub.publish(self._make_msg(v, w))
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(self.dt)
 
     def stop(self, pause: float = 0.2):
-        self.pub.publish(Twist())
+        self.pub.publish(self._make_msg(0.0, 0.0))
         rclpy.spin_once(self, timeout_sec=0.0)
         time.sleep(max(0.0, pause))
 
