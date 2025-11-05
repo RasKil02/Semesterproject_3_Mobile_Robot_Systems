@@ -1,6 +1,5 @@
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
-from ProtocolSpeaker_connection.Protocol import Protocol
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 import rclpy
