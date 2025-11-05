@@ -15,6 +15,7 @@ LUT = {
     (941,1209):'*',(941,1336):'0',(941,1477):'#',(941,1633):'D'
 }
 
+# Sets up hann window
 def hann(N: int):
     n = np.arange(N)
     return 0.5 * (1 - np.cos(2*np.pi*n/(N-1)))
@@ -23,7 +24,6 @@ EPS = 1e-12
 def db10(x: float) -> float:
     return 10*np.log10(max(float(x), EPS))
 
-# ---------------- DigitStabilizer ----------------
 class DigitStabilizer:
     """
     Enkel tids-baseret stabilisering:
@@ -129,18 +129,9 @@ class DigitStabilizer:
         self.t_last_seen = None
         self.gap_start = None
 
-# ---------------- DTMFDetector ----------------
 class DTMFDetector:
-    """
-    Samler hele DTMF-pipelinen:
-      - bandpass
-      - Goertzel på rækker/søjler
-      - tærskel- & kvalitetskriterier
-      - overlap / blok-framing
-
-    DigitStabilizer holdes udenfor og injiceres via analyze(..., stabilizer=...).
-    """
     def __init__(self,
+                 # Audio input
                  fs: int,
                  block_ms: float = 30.0,
                  hop_ms: float   = 7.5,
@@ -148,23 +139,24 @@ class DTMFDetector:
                  highcut: float  = 1700.0,
                  bp_order: int   = 4,
                  # Tærskler
-                 min_db: float = -20.0,
-                 sep_db: float = 5.0,
-                 dom_db: float = 4.0,
-                 snr_db: float = 8.0,
+                 min_db: float = -20.0,     # minimum absolut db
+                 sep_db: float = 5.0,       # separations-tærskel
+                 dom_db: float = 4.0,       # dominans-tærskel
+                 snr_db: float = 8.0,       # SNR-tærskel
                  twist_pos_db: float = +4.0,   # positiv twist grænse (row > col)
                  twist_neg_db: float = -8.0):  # negativ twist grænse (col > row)
+        
         self.fs = int(fs)
-        self.block = max(1, int(self.fs * (block_ms/1000.0)))
-        self.hop   = max(1, int(self.fs * (hop_ms/1000.0)))
+        self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
+        self.hop   = max(1, int(self.fs * (hop_ms/1000.0))) # 60 samples ved 7.5 ms @ 8kHz
 
         # filter + vindue
-        self.bp = BandPassFilter(self.fs, lowcut, highcut, bp_order)
-        self.win = hann(self.block)
+        self.bp = BandPassFilter(self.fs, lowcut, highcut, bp_order) # Uses butterworth bandpass filter
+        self.win = hann(self.block) # Sets up hann window to be used on each block
 
         # goertzel pr. gruppe
-        self.g_low  = GoertzelAlgorithm(self.fs, self.block, FREQS_LOW)
-        self.g_high = GoertzelAlgorithm(self.fs, self.block, FREQS_HIGH)
+        self.g_low  = GoertzelAlgorithm(self.fs, self.block, FREQS_LOW) # Will measure the power at the low DTMF frequencies inside each block
+        self.g_high = GoertzelAlgorithm(self.fs, self.block, FREQS_HIGH) # Will measure the power at the high DTMF frequencies inside each block
 
         # tærskler
         self.min_db  = float(min_db)
@@ -174,14 +166,12 @@ class DTMFDetector:
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
 
-    # --- offentlig API -----------------------------------------------------
-
+    # Recordér audio og detektér DTMF cifre
     def record_and_detect(self, duration_s: float, out_wav: str, stabilizer) -> str:
-        """Optag via AudioSampler og kør analyze."""
-        sampler = AudioSampler(duration_s, self.fs, out_wav)
-        audio = sampler.record_audio()
+        sampler = AudioSampler(duration_s, self.fs, out_wav) # Sets up audio sampler (instance of AudioSampler class)
+        audio = sampler.record_audio() # Uses the record_audio method to record audio for a set duration
         sampler.save_audio()
-        return self.analyze(audio, stabilizer=stabilizer)
+        return self.analyze(audio, stabilizer=stabilizer) # Analyzes the recorded audio and returns detected digits
 
     def analyze(self, audio: np.ndarray, stabilizer) -> str:
         """Returnér streng med detekterede cifre."""
@@ -233,8 +223,6 @@ class DTMFDetector:
                 digits.append(out)
 
         return "".join(digits)
-
-    # --- hjælpefunktioner --------------------------------------------------
 
     @staticmethod
     def _top2(energy_dict, freqs_tuple):
