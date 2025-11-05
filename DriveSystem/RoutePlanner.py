@@ -45,12 +45,16 @@ class RoutePlanner(Node):
         time.sleep(max(0.0, pause))
 
     def destDecision(self, command: str) -> int:
+        # first 6 bits determine destination
         table = {"000000": 1, "000001": 2, "000010": 3, "000011": 4}
-        return table.get(command[:8], 0)
+        dest_bits = command[:6]
+        return table.get(dest_bits, 0)
 
     def supplyDecision(self, command: str) -> int:
+        # next 6 bits determine number of supplies
         table = {"000000": 0, "000001": 1, "000010": 2, "000011": 3}
-        return table.get(command[8:16], 0)
+        supply_bits = command[6:12]
+        return table.get(supply_bits, 0)
 
     def driveStraight(self, speed: float, duration: float):
         self.publish_vw_for_duration(speed, 0.0, duration)
