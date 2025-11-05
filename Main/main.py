@@ -34,15 +34,9 @@ def playCommand():
     print("Command played:", command)
     # Here you would add code to process and execute the command
 
-# Used to run the robot with route planning, based on protocol user input (until microphone is implemented)
+# Used to run the robot with route planning, based on protocol user input
 def runRobotWithRoutePlanner(command: str):
-    # allow your own CLI args if you ever add some later
-    parser = argparse.ArgumentParser(add_help=False)
-    args, unknown = parser.parse_known_args()
-
-    # let rclpy handle any ROS2 args such as --ros-args -p rate_hz:=40.0
-    rclpy.init(args=unknown)
-
+    rclpy.init()
     node = RoutePlanner()
     try:
         node.chooseRoute(command)

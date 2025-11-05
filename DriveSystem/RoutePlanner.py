@@ -4,14 +4,18 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
 
+
 class RoutePlanner(Node):
     def __init__(self):
         super().__init__('route_planner')
-        self.declare_parameter('rate_hz', 20.0)
-        self.pub = self.create_publisher(TwistStamped, 'cmd_vel', 10)
-        self.rate_hz = float(self.get_parameter('rate_hz').value)
-        self.rate_hz = max(1.0, min(self.rate_hz, 100.0))  # bounds like before
+
+        # Fixed internal settings
+        self.rate_hz = 40.0                     # <- Hard-coded rate
+        self.rate_hz = max(1.0, min(self.rate_hz, 100.0))  # clamp just in case
         self.dt = 1.0 / self.rate_hz
+
+        self.pub = self.create_publisher(TwistStamped, 'cmd_vel', 10)
+        self.get_logger().info(f"RoutePlanner initialized with fixed rate: {self.rate_hz} Hz")
 
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
         msg = TwistStamped()
