@@ -6,6 +6,7 @@ import rclpy
 import time
 import argparse
 
+# Function
 def testRobotMovement():
     """Simple manual test to verify robot motion via MoveTest node."""
     rclpy.init()
