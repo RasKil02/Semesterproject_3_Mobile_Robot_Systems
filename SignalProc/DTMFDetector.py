@@ -1,9 +1,9 @@
 # dtmf_detector.py
 import numpy as np
 import argparse
-from BandpassFilter import BandPassFilter
-from Goertzel import GoertzelAlgorithm
-from AudioSampling import AudioSampler
+from SignalProc.BandpassFilter import BandPassFilter
+from SignalProc.Goertzel import GoertzelAlgorithm
+from SignalProc.AudioSampling import AudioSampler
 
 # --- DTMF opsætning ---
 FREQS_LOW  = (697, 770, 852, 941)
