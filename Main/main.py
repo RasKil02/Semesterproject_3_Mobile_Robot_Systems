@@ -36,19 +36,24 @@ def playCommand():
 
 # Used to run the robot with route planning, based on protocol user input (until microphone is implemented)
 def runRobotWithRoutePlanner(command: str):
-    rclpy.init()
+    # allow your own CLI args if you ever add some later
+    parser = argparse.ArgumentParser(add_help=False)
+    args, unknown = parser.parse_known_args()
+
+    # let rclpy handle any ROS2 args such as --ros-args -p rate_hz:=40.0
+    rclpy.init(args=unknown)
+
     node = RoutePlanner()
     try:
         node.chooseRoute(command)
         time.sleep(3)
-
     except KeyboardInterrupt:
         pass
     finally:
         node.stop()
         node.destroy_node()
         rclpy.shutdown()
-      
+
 # Reads DTMF sounds and converts to intermidiate command string ex. "0000"
 def readCommand():
     ap = argparse.ArgumentParser()
