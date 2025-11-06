@@ -173,33 +173,57 @@ class DTMFDetector:
         sampler.save_audio()
         return self.analyze(audio, stabilizer=stabilizer) # Analyzes the recorded audio and returns detected digits
 
+    # Analyser audio og returnér detekterede cifre som streng, takes numpy array as input and returns string
     def analyze(self, audio: np.ndarray, stabilizer) -> str:
-        """Returnér streng med detekterede cifre."""
+        # Digits holds detected digits, later to be joined and returned as string
         digits = []
-        nblocks = 1 + max(0, (len(audio) - self.block) // self.hop)
+        
+        nblocks = 1 + max(0, (len(audio) - self.block) // self.hop) # Number of analysis blocks, based on audio length, block size and hop size, so some of these will overlap
+        
+        # Loop over all blocks 
         for bi in range(nblocks):
             start = bi * self.hop
-            seg = audio[start:start+self.block].astype(float)
+            seg = audio[start:start+self.block].astype(float) # Extract current block from audio signal, seg now holds the current block samples
+            
             if len(seg) < self.block:
                 break
 
-            seg -= seg.mean()
-            seg_f = self.bp.process(seg)
-            seg_f *= self.win
+            seg -= seg.mean() # Remove DC offset
+            seg_f = self.bp.process(seg) # self.bp is an instance of BandPassFilter, this applies the bandpass filter to the current block, using its process method
+            seg_f *= self.win # Apply windowing to the filtered block
 
-            E_low  = self.g_low.process(seg_f)
-            E_high = self.g_high.process(seg_f)
+            E_low  = self.g_low.process(seg_f) # Measure power at low DTMF frequencies using Goertzel algorithm
+            E_high = self.g_high.process(seg_f) # Same for high DTMF frequencies
 
+            # So now we have the energies at each DTMF frequency for the current block
+            # Which could look something like:
+            # E_low  = {697: 0.01, 770: 0.5, 852: 0.02, 941: 0.03}
+            # E_high = {1209: 0.02, 1336: 0.6, 1477: 0.01, 1633: 0.03}
+            # Which would indicate a DTMF '5' (770 Hz and 1336 Hz)
+            
+            # We have to find the two highest energies in each group
+            # We use the helper method _top2 defined below, which returns the frequencies with the highest and second highest energies
+            # So lf is the low frequency with highest energy, l2 is the second highest
+            # In the example above, lf would be 770 and l2 would be 941, and similarly for hf and h2 we would get 1336 and 1633
+            # Which would indicate a DTMF '5' (770 Hz and 1336 Hz)
             lf, l2 = self._top2(E_low,  FREQS_LOW)
             hf, h2 = self._top2(E_high, FREQS_HIGH)
 
-            blk_db   = db10(np.mean(seg_f**2))
-            l_abs_db = db10(E_low[lf]);  l2_db = db10(E_low[l2])
-            h_abs_db = db10(E_high[hf]); h2_db = db10(E_high[h2])
-
-            # kvalitetskriterier
+            blk_db   = db10(np.mean(seg_f**2)) # Average block energy in dB
+            
+            l_abs_db = db10(E_low[lf]); # decibal level of the dominant low frequency
+            l2_db = db10(E_low[l2]) # decibal level of the second dominant low frequency
+            
+            h_abs_db = db10(E_high[hf]); # for dominant high frequency
+            h2_db = db10(E_high[h2])
+            
+            # Now we have the decibal levels of the dominant and second dominant frequencies in both low and high groups
+            
+            # Calculate background noise levels by averaging energies of every frequency except the dominant one, for both low and high groups
             low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
             high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
+            
+            # Calculate SNR for both low and high frequencies, SNR (signal to noise ratio), indicates how much stronger the signal is compared to the background noise
             snr_low_db  = db10(E_low[lf]  / low_noise)
             snr_high_db = db10(E_high[hf] / high_noise)
 
@@ -224,38 +248,8 @@ class DTMFDetector:
 
         return "".join(digits)
 
+    # Helper to find top 2 frequencies
     @staticmethod
     def _top2(energy_dict, freqs_tuple):
-        """Returnér (top1, top2) frekvenser efter energi i dict."""
         top = sorted(freqs_tuple, key=lambda f: energy_dict[f], reverse=True)
         return top[0], top[1]
-
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--duration", type=float, default=4.0)
-    ap.add_argument("--fs", type=int, default=8000)
-    ap.add_argument("--out", type=str, default="output.wav")
-    ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.5)
-    args = ap.parse_args()
-
-    detector = DTMFDetector(
-        fs=args.fs,
-        block_ms=args.block_ms,
-        hop_ms=args.hop_ms,
-        lowcut=620, highcut=1700, bp_order=4,
-        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+4, twist_neg_db=-8
-    )
-
-    # injicér stabilizer (hold/miss/gap kan du stadig tune frit)
-    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
-
-    # optag og detektér i ét hug:
-    digits = detector.record_and_detect(args.duration, args.out, stabilizer=stab)
-    print("\n--- Detected digits ---")
-    print(digits if digits else "(none)")
-
-if __name__ == "__main__":
-    main()
