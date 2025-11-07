@@ -227,22 +227,33 @@ class DTMFDetector:
             snr_low_db  = db10(E_low[lf]  / low_noise)
             snr_high_db = db10(E_high[hf] / high_noise)
 
-            sep_ok = (l_abs_db - l2_db > self.sep_db) and (h_abs_db - h2_db > self.sep_db)
-            abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db)
-            twist  = (l_abs_db - h_abs_db)
+            # Now apply all the detection criteria, these are used to determine if the detected frequencies are valid DTMF tones
+            sep_ok = (l_abs_db - l2_db > self.sep_db) and (h_abs_db - h2_db > self.sep_db) # separation between dominant and second dominant frequencies, must exceed threshold, sep_db which currently is 5 dB. Does so for both low and high groups
+            abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db) # absolute level above average block energy, must exceed min_db threshold, currently -20 dB
+           
+            # Are the levels of the low and high frequencies almost equal, within twist thresholds
+            twist  = (l_abs_db - h_abs_db) 
             twist_ok = (self.twist_neg_db <= twist <= self.twist_pos_db)
 
+            # Is each detectected frequency dominant enough over the background noise
             l_dom_db = db10(E_low[lf]  / low_noise)
             h_dom_db = db10(E_high[hf] / high_noise)
             dom_ok   = (l_dom_db >= self.dom_db) and (h_dom_db >= self.dom_db)
 
+            # Are both tones much stronger than the background noise, exceeding the SNR threshold
             snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
 
+            # If all criteria are met, we consider the detection valid
             good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
+            
+            # Map to correct DTMF frequency number or "?" if the detection was not good
             sym = LUT.get((lf, hf), "?") if good else "?"
 
-            t_ms = (start + self.block/2) / self.fs * 1000.0
-            out = stabilizer.update(sym, now_ms=t_ms)
+            t_ms = (start + self.block/2) / self.fs * 1000.0 # timestamp in milliseconds for the center of the block
+            
+            out = stabilizer.update(sym, now_ms=t_ms) # Update the stabilizer with the detected symbol and current time
+            
+            # Append to digits if we have a new stable output
             if out and (not digits or digits[-1] != out):
                 digits.append(out)
 
