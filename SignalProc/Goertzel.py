@@ -17,7 +17,6 @@ class GoertzelAlgorithm:
         return coeffs
 
     def process(self, signal: np.ndarray) -> Dict[float, float]:
-        """Returnér power for hver target-frekvens på en blok (længde N)."""
         x = np.asarray(signal, dtype=np.float64).squeeze()
         if x.ndim != 1:
             raise ValueError("GoertzelAlgorithm.process forventer 1D signal.")
