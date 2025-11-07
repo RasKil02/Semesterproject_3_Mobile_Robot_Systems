@@ -1,5 +1,7 @@
 import argparse
-from dtmf_detector import DTMFDetector
+import numpy as np
+from SignalProc.DTMFDetector import DTMFDetector
+from SignalProc.AudioSampling import AudioSampler
 
 def readCommand():
     parser = argparse.ArgumentParser()
@@ -19,10 +21,21 @@ def readCommand():
         bp_order=4
     )
 
-    digits = detector.record_and_detect(args.duration, args.out)
+    # Record audio
+    sampler = AudioSampler(args.duration, args.fs, args.out)
+    audio = sampler.record_audio()
+    sampler.save_audio()
+
+    # Simple mic check
+    if np.max(np.abs(audio)) < 0.001:
+        print("No significant sound detected — check your microphone.")
+        return "(no audio)"
+
+    # Analyze if sound was detected
+    digits = detector.analyze(audio)
     print("\n--- Detected digits ---")
     print(digits if digits else "(none)")
     return digits
 
 if __name__ == "__main__":
-    readCommand()
+    readCommand()   

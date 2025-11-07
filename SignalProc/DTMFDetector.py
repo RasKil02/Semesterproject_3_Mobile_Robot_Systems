@@ -42,6 +42,10 @@ class DTMFDetector:
             if len(seg) < self.block:
                 break
 
+            # Add this line: skip very quiet segments
+            if np.max(np.abs(seg)) < 0.001:
+                continue
+
             seg -= np.mean(seg)
             seg_f = self.bp.process(seg) * self.win
 
