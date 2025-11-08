@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sounddevice as sd
-import argparse
 from scipy.io import wavfile
 from scipy.signal import resample_poly
 
@@ -11,6 +10,7 @@ class AudioSampler:
         self.fs = fs
         self.output = output
         self.audio = None
+        
     '''
     def record_audio(self, device=None):
         # Find automatisk et USB input device
@@ -64,19 +64,28 @@ class AudioSampler:
     
     # record_audio from computer microphone
     '''
-    def record_audio(self, device=None):
+    
+    def searchForDevices(self):
         # Hvis ingen device angivet, find automatisk standard input device
         if device is None:
             device = sd.default.device[0]  # default input device
-
-        # Behold eksisterende output-device (sæt ikke None)
-        cur_in, cur_out = sd.default.device
+        return device
+    
+    def setupDevice(self, device):
+    # Behold eksisterende output-device (sæt ikke None)
+        cur_out = sd.default.device
         sd.default.device = (device, cur_out)
 
         # Hent device-info og log
         info = sd.query_devices(device, 'input')
         native_fs = float(info['default_samplerate'])
         print(f"[Device] name={info['name']}, default_samplerate={native_fs} Hz")
+        return native_fs
+        
+    def record_audio(self, device=None):
+        # Find og sæt device
+        device = self.searchForDevices()
+        native_fs = self.setupDevice(device)
 
         # Vælg strategi:
         USE_TELEPHONY_FS = True  # True = A (8 kHz), False = B (native fs)
@@ -106,6 +115,7 @@ class AudioSampler:
         self.audio = sd.rec(int(self.duration * rec_fs),
                             samplerate=rec_fs, channels=1, dtype='float32')
         sd.wait()
+
         # niveau-diagnostik
         a = self.audio.squeeze().astype(float)
         peak = float(np.max(np.abs(a)))
@@ -134,17 +144,3 @@ class AudioSampler:
         a = a / peak   # KUN for at kunne høre den ved afspilning
         wavfile.write(self.output, self.fs, (a*32767).astype(np.int16))
         print(f"Audio saved to {self.output} (normalized)")
-
-
-    def plot_waveform(self):
-        if self.audio is None:
-            raise ValueError("No audio recorded to plot.")
-        plt.figure(figsize=(10, 4))
-        plt.plot(np.linspace(0, len(self.audio) / self.fs, num=len(self.audio)), self.audio)
-        plt.title("Audio Waveform")
-        plt.xlabel("Time [s]")
-        plt.ylabel("Amplitude")
-        plt.grid()
-        plt.show()
-    
-
