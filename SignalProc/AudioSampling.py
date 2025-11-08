@@ -67,6 +67,7 @@ class AudioSampler:
     
     def searchForDevices(self):
         # Hvis ingen device angivet, find automatisk standard input device
+        device = None
         if device is None:
             device = sd.default.device[0]  # default input device
         return device
