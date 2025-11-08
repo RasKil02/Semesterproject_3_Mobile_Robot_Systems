@@ -1,14 +1,13 @@
+import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
-import rclpy
 import time
 import argparse
 
 # Function
 def testRobotMovement():
-    """Simple manual test to verify robot motion via MoveTest node."""
     rclpy.init()
     node = MoveTest()
     try:
@@ -22,7 +21,6 @@ def testRobotMovement():
 
 
 def runRobotWithRoutePlanner(command: str):
-    """Run the robot route planner based on the received command string."""
     rclpy.init()
     node = RoutePlanner()
     try:
@@ -36,7 +34,6 @@ def runRobotWithRoutePlanner(command: str):
         rclpy.shutdown()
 
 def readCommand():
-    """Record audio from microphone and detect DTMF digits."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--duration", type=float, default=10.0)
     ap.add_argument("--fs", type=int, default=8000)
@@ -63,7 +60,6 @@ def readCommand():
 
 
 def convertCommand(command: str) -> str:
-    """Convert intermediate digit command string to binary format for RoutePlanner."""
     if len(command) % 2:
         raise ValueError("Længden skal være lige (par af cifre).")
 
@@ -77,7 +73,7 @@ def convertCommand(command: str) -> str:
 
 
 if __name__ == "__main__":
-    # Optional direct run: works if you ever want to test everything on one machine
+    # Test robot movement
     command = readCommand()
     converted = convertCommand(command)
     print("Converted command:", converted)
