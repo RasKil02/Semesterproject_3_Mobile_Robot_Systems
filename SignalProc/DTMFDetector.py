@@ -15,7 +15,7 @@ LUT = {
     (941,1209):'*',(941,1336):'0',(941,1477):'#',(941,1633):'D'
 }
 
-# Sets up hann window
+# Sets up hanning window
 def hann(N: int):
     n = np.arange(N)
     return 0.5 * (1 - np.cos(2*np.pi*n/(N-1)))
@@ -152,13 +152,13 @@ class DTMFDetector:
 
         # filter + vindue
         self.bp = BandPassFilter(self.fs, lowcut, highcut, bp_order) # Uses butterworth bandpass filter
-        self.win = hann(self.block) # Sets up hann window to be used on each block
+        self.win = hann(self.block) # Sets up hanning window to be used on each block
 
         # goertzel pr. gruppe
         self.g_low  = GoertzelAlgorithm(self.fs, self.block, FREQS_LOW) # Will measure the power at the low DTMF frequencies inside each block
         self.g_high = GoertzelAlgorithm(self.fs, self.block, FREQS_HIGH) # Will measure the power at the high DTMF frequencies inside each block
 
-        # tærskler
+        # Thresholds
         self.min_db  = float(min_db)
         self.sep_db  = float(sep_db)
         self.dom_db  = float(dom_db)
@@ -166,14 +166,14 @@ class DTMFDetector:
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
 
-    # Recordér audio og detektér DTMF cifre
+    # Record audio and detect DTMF digits
     def record_and_detect(self, duration_s: float, out_wav: str, stabilizer) -> str:
         sampler = AudioSampler(duration_s, self.fs, out_wav) # Sets up audio sampler (instance of AudioSampler class)
         audio = sampler.record_audio() # Uses the record_audio method to record audio for a set duration
         sampler.save_audio()
         return self.analyze(audio, stabilizer=stabilizer) # Analyzes the recorded audio and returns detected digits
 
-    # Analyser audio og returnér detekterede cifre som streng, takes numpy array as input and returns string
+    # Analyze audio and return detected digits as string, takes numpy array as input and returns string
     def analyze(self, audio: np.ndarray, stabilizer) -> str:
         # Digits holds detected digits, later to be joined and returned as string
         digits = []
