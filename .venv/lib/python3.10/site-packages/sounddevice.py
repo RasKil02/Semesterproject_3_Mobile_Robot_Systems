@@ -48,7 +48,7 @@ Online documentation:
     https://python-sounddevice.readthedocs.io/
 
 """
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 
 import atexit as _atexit
 import os as _os
@@ -829,11 +829,11 @@ class _StreamBase:
                                        extra_settings, samplerate)
             self._device = parameters.device
             self._channels = parameters.channelCount
+            iparameters = _ffi.NULL
+            oparameters = _ffi.NULL
             if kind == 'input':
                 iparameters = parameters
-                oparameters = _ffi.NULL
             elif kind == 'output':
-                iparameters = _ffi.NULL
                 oparameters = parameters
 
         ffi_callback = _ffi.callback('PaStreamCallback', error=_lib.paAbort)
@@ -1165,7 +1165,56 @@ class _StreamBase:
             _check(err, 'Error closing stream')
 
 
-class RawInputStream(_StreamBase):
+class _InputStreamBase(_StreamBase):
+    """Base class for input stream classes."""
+
+    @property
+    def read_available(self):
+        """The number of frames that can be read without waiting.
+
+        Returns a value representing the maximum number of frames that
+        can be read from the stream without blocking or busy waiting.
+
+        """
+        return _check(_lib.Pa_GetStreamReadAvailable(self._ptr))
+
+    def _raw_read(self, frames):
+        """Read samples from the stream into a buffer.
+
+        This is the same as `Stream.read()`, except that it returns
+        a plain Python buffer object instead of a NumPy array.
+        NumPy is not necessary for using this.
+
+        Parameters
+        ----------
+        frames : int
+            The number of frames to be read.  See `Stream.read()`.
+
+        Returns
+        -------
+        data : buffer
+            A buffer of interleaved samples. The buffer contains
+            samples in the format specified by the *dtype* parameter
+            used to open the stream, and the number of channels
+            specified by *channels*.
+            See also `~Stream.samplesize`.
+        overflowed : bool
+            See `Stream.read()`.
+
+        """
+        channels, _ = _split(self._channels)
+        samplesize, _ = _split(self._samplesize)
+        data = _ffi.new('signed char[]', channels * samplesize * frames)
+        err = _lib.Pa_ReadStream(self._ptr, data, frames)
+        if err == _lib.paInputOverflowed:
+            overflowed = True
+        else:
+            _check(err)
+            overflowed = False
+        return _ffi.buffer(data), overflowed
+
+
+class RawInputStream(_InputStreamBase):
     """Raw stream for recording only.  See __init__() and RawStream."""
 
     def __init__(self, samplerate=None, blocksize=None,
@@ -1205,91 +1254,11 @@ class RawInputStream(_StreamBase):
         _StreamBase.__init__(self, kind='input', wrap_callback='buffer',
                              **_remove_self(locals()))
 
-    @property
-    def read_available(self):
-        """The number of frames that can be read without waiting.
-
-        Returns a value representing the maximum number of frames that
-        can be read from the stream without blocking or busy waiting.
-
-        """
-        return _check(_lib.Pa_GetStreamReadAvailable(self._ptr))
-
-    def read(self, frames):
-        """Read samples from the stream into a buffer.
-
-        This is the same as `Stream.read()`, except that it returns
-        a plain Python buffer object instead of a NumPy array.
-        NumPy is not necessary for using this.
-
-        Parameters
-        ----------
-        frames : int
-            The number of frames to be read.  See `Stream.read()`.
-
-        Returns
-        -------
-        data : buffer
-            A buffer of interleaved samples. The buffer contains
-            samples in the format specified by the *dtype* parameter
-            used to open the stream, and the number of channels
-            specified by *channels*.
-            See also `~Stream.samplesize`.
-        overflowed : bool
-            See `Stream.read()`.
-
-        """
-        channels, _ = _split(self._channels)
-        samplesize, _ = _split(self._samplesize)
-        data = _ffi.new('signed char[]', channels * samplesize * frames)
-        err = _lib.Pa_ReadStream(self._ptr, data, frames)
-        if err == _lib.paInputOverflowed:
-            overflowed = True
-        else:
-            _check(err)
-            overflowed = False
-        return _ffi.buffer(data), overflowed
+    read = _InputStreamBase._raw_read
 
 
-class RawOutputStream(_StreamBase):
-    """Raw stream for playback only.  See __init__() and RawStream."""
-
-    def __init__(self, samplerate=None, blocksize=None,
-                 device=None, channels=None, dtype=None, latency=None,
-                 extra_settings=None, callback=None, finished_callback=None,
-                 clip_off=None, dither_off=None, never_drop_input=None,
-                 prime_output_buffers_using_stream_callback=None):
-        """PortAudio output stream (using buffer objects).
-
-        This is the same as `OutputStream`, except that the *callback*
-        function and `~RawStream.write()` work on plain Python
-        buffer objects instead of on NumPy arrays.
-        NumPy is not necessary for using this.
-
-        Parameters
-        ----------
-        dtype : str
-            See `RawStream`.
-        callback : callable
-            User-supplied function to generate audio data in response to
-            requests from an active stream.
-            The callback must have this signature:
-
-            .. code-block:: text
-
-                callback(outdata: buffer, frames: int,
-                         time: CData, status: CallbackFlags) -> None
-
-            The arguments are the same as in the *callback* parameter of
-            `RawStream`, except that *indata* is missing.
-
-        See Also
-        --------
-        RawStream, Stream
-
-        """
-        _StreamBase.__init__(self, kind='output', wrap_callback='buffer',
-                             **_remove_self(locals()))
+class _OutputStreamBase(_StreamBase):
+    """Base class for output stream classes."""
 
     @property
     def write_available(self):
@@ -1301,7 +1270,7 @@ class RawOutputStream(_StreamBase):
         """
         return _check(_lib.Pa_GetStreamWriteAvailable(self._ptr))
 
-    def write(self, data):
+    def _raw_write(self, data):
         """Write samples to the stream.
 
         This is the same as `Stream.write()`, except that it expects
@@ -1346,6 +1315,49 @@ class RawOutputStream(_StreamBase):
             _check(err)
             underflowed = False
         return underflowed
+
+
+class RawOutputStream(_OutputStreamBase):
+    """Raw stream for playback only.  See __init__() and RawStream."""
+
+    def __init__(self, samplerate=None, blocksize=None,
+                 device=None, channels=None, dtype=None, latency=None,
+                 extra_settings=None, callback=None, finished_callback=None,
+                 clip_off=None, dither_off=None, never_drop_input=None,
+                 prime_output_buffers_using_stream_callback=None):
+        """PortAudio output stream (using buffer objects).
+
+        This is the same as `OutputStream`, except that the *callback*
+        function and `~RawStream.write()` work on plain Python
+        buffer objects instead of on NumPy arrays.
+        NumPy is not necessary for using this.
+
+        Parameters
+        ----------
+        dtype : str
+            See `RawStream`.
+        callback : callable
+            User-supplied function to generate audio data in response to
+            requests from an active stream.
+            The callback must have this signature:
+
+            .. code-block:: text
+
+                callback(outdata: buffer, frames: int,
+                         time: CData, status: CallbackFlags) -> None
+
+            The arguments are the same as in the *callback* parameter of
+            `RawStream`, except that *indata* is missing.
+
+        See Also
+        --------
+        RawStream, Stream
+
+        """
+        _StreamBase.__init__(self, kind='output', wrap_callback='buffer',
+                             **_remove_self(locals()))
+
+    write = _OutputStreamBase._raw_write
 
 
 class RawStream(RawInputStream, RawOutputStream):
@@ -1402,7 +1414,7 @@ class RawStream(RawInputStream, RawOutputStream):
                              **_remove_self(locals()))
 
 
-class InputStream(RawInputStream):
+class InputStream(_InputStreamBase):
     """Stream for input only.  See __init__() and Stream."""
 
     def __init__(self, samplerate=None, blocksize=None,
@@ -1472,12 +1484,12 @@ class InputStream(RawInputStream):
         """
         dtype, _ = _split(self._dtype)
         channels, _ = _split(self._channels)
-        data, overflowed = RawInputStream.read(self, frames)
+        data, overflowed = _InputStreamBase._raw_read(self, frames)
         data = _array(data, channels, dtype)
         return data, overflowed
 
 
-class OutputStream(RawOutputStream):
+class OutputStream(_OutputStreamBase):
     """Stream for output only.  See __init__() and Stream."""
 
     def __init__(self, samplerate=None, blocksize=None,
@@ -1562,7 +1574,7 @@ class OutputStream(RawOutputStream):
                 data.dtype.name, dtype))
         if not data.flags.c_contiguous:
             raise TypeError('data must be C-contiguous')
-        return RawOutputStream.write(self, data)
+        return _OutputStreamBase._raw_write(self, data)
 
 
 class Stream(InputStream, OutputStream):
@@ -2104,29 +2116,23 @@ class default:
     device = None, None
     """Index or query string of default input/output device.
 
-    See the *device* argument of `Stream`.
-
     If not overwritten, this is queried from PortAudio.
 
     See Also
     --------
-    `query_devices()`
+    `default`, `query_devices()`, the *device* argument of `Stream`
 
     """
     channels = _default_channels = None, None
     """Default number of input/output channels.
 
-    See the *channels* argument of `Stream`.
-
     See Also
     --------
-    `query_devices()`
+    `default`, `query_devices()`, the *channels* argument of `Stream`
 
     """
     dtype = _default_dtype = 'float32', 'float32'
     """Default data type used for input/output samples.
-
-    See the *dtype* argument of `Stream`.
 
     The types ``'float32'``, ``'int32'``, ``'int16'``, ``'int8'`` and
     ``'uint8'`` can be used for all streams and functions.
@@ -2135,6 +2141,10 @@ class default:
     ``'float32'``) and `RawInputStream`, `RawOutputStream` and
     `RawStream` support ``'int24'`` (packed 24 bit format, which is
     *not* supported in NumPy!).
+
+    See Also
+    --------
+    `default`, `numpy:numpy.dtype`, the *dtype* argument of `Stream`
 
     """
     latency = _default_latency = 'high', 'high'
@@ -2152,7 +2162,7 @@ class default:
 
     See Also
     --------
-    `query_devices()`
+    `default`, `query_devices()`
 
     """
     blocksize = _lib.paFramesPerBufferUnspecified
@@ -2436,7 +2446,7 @@ class CoreAudioSettings:
 
 class WasapiSettings:
 
-    def __init__(self, exclusive=False, auto_convert=False):
+    def __init__(self, exclusive=False, auto_convert=False, explicit_sample_format=False):
         """WASAPI-specific input/output settings.
 
         Objects of this class can be used as *extra_settings* argument
@@ -2458,6 +2468,13 @@ class WasapiSettings:
             system mixer sample rate.  This only applies in *shared
             mode* and has no effect when *exclusive* is set to ``True``.
 
+        explicit_sample_format : bool
+            Force explicit sample format and do not allow PortAudio to
+            select suitable working format. API will fail if provided
+            sample format is not supported by audio hardware in Exclusive
+            mode or system mixer in Shared mode. This is required for
+            accurate native format detection.
+
         Examples
         --------
         Setting exclusive mode when calling `play()`:
@@ -2475,8 +2492,10 @@ class WasapiSettings:
         flags = 0x0
         if exclusive:
             flags |= _lib.paWinWasapiExclusive
-        elif auto_convert:
+        if auto_convert:
             flags |= _lib.paWinWasapiAutoConvert
+        if explicit_sample_format:
+            flags |= _lib.paWinWasapiExplicitSampleFormat
         self._streaminfo = _ffi.new('PaWasapiStreamInfo*', dict(
             size=_ffi.sizeof('PaWasapiStreamInfo'),
             hostApiType=_lib.paWASAPI,

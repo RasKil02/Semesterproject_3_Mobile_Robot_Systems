@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sounddevice as sd
 from scipy.io import wavfile
 from scipy.signal import resample_poly
+from SignalProc.Plotting import Plotting
 
 class AudioSampler:
     def __init__(self, duration, fs, output):
@@ -84,6 +85,12 @@ class AudioSampler:
             print(f"[Resample] {rec_fs} Hz -> {self.fs} Hz (up={up}, down={down})")
             a = resample_poly(a, up, down).astype(np.float32)
         self.audio = a
+        
+        # Plot original audio
+        print("Plotting recorded audio signal...")
+        audioDB = Plotting.convert_linear_to_db(self.audio)
+        Plotting.plot_start_signal_db(audioDB, self.fs,)
+        
         return self.audio
     
     def save_audio(self):
