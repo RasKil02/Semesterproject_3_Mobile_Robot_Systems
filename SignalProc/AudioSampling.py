@@ -10,67 +10,18 @@ class AudioSampler:
         self.fs = fs
         self.output = output
         self.audio = None
-        
-    '''
-    def record_audio(self, device=None):
-        # Find automatisk et USB input device
-        if device is None:
-            for i, d in enumerate(sd.query_devices()):
-                if "usb" in d['name'].lower() and d['max_input_channels'] > 0:
-                    device = i
-                    break
-            if device is None:
-                raise RuntimeError("Ingen USB mikrofon fundet!")
-
-        # Behold nuværende output device
-        cur_in, cur_out = sd.default.device
-        sd.default.device = (device, cur_out)
-
-        info = sd.query_devices(device, 'input')
-        native_fs = float(info['default_samplerate'])
-        print(f"[Device] name={info['name']}, native_fs={native_fs} Hz")
-
-        target_fs = 8000.0  # telephony standard
-        self.fs = int(target_fs)
-
-        rec_fs = int(native_fs)
-        print(f"[FS] Recording at {rec_fs} Hz, will resample to {self.fs} Hz if needed.")
-
-        print(f"Recording from device {device} for {self.duration} s...")
-        sd.default.samplerate = rec_fs
-        self.audio = sd.rec(int(self.duration * rec_fs),
-                            samplerate=rec_fs, channels=1, dtype='float32')
-        sd.wait()
-
-        # niveau-diagnostik
-        a = self.audio.squeeze().astype(float)
-        peak = float(np.max(np.abs(a)))
-        rms  = float(np.sqrt(np.mean(a*a)))
-        print(f"[Audio] peak={peak:.6f}, rms={rms:.6f}")
-        print("Recording complete.")
-
-        # Resample hvis nødvendigt
-        if rec_fs != self.fs:
-            g = np.gcd(int(rec_fs), int(self.fs))
-            up, down = self.fs // g, int(rec_fs) // g
-            print(f"[Resample] {rec_fs} Hz -> {self.fs} Hz (up={up}, down={down})")
-            a = resample_poly(a, up, down).astype(np.float32)
-        else:
-            a = a.astype(np.float32)
-
-        self.audio = a
-        return self.audio
-    
-    
-    # record_audio from computer microphone
-    '''
     
     def searchForDevices(self):
-        # Hvis ingen device angivet, find automatisk standard input device
-        device = None
-        if device is None:
-            device = sd.default.device[0]  # default input device
-        return device
+        # Find første input-device med "usb" i navnet
+        try:
+            devs = sd.query_devices()
+            for i, d in enumerate(devs):
+                if d.get('max_input_channels', 0) > 0 and 'usb' in d.get('name','').lower():
+                    return i
+        except Exception:
+            pass
+        # Fallback: brug default input
+        return sd.default.device[0]
     
     def setupDevice(self, device):
     # Behold eksisterende output-device (sæt ikke None)
