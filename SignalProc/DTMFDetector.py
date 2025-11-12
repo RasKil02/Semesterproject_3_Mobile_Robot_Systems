@@ -4,6 +4,7 @@ import argparse
 from SignalProc.BandpassFilter import BandPassFilter
 from SignalProc.Goertzel import GoertzelAlgorithm
 from SignalProc.AudioSampling import AudioSampler
+from SignalProc.Plotting import Plotting
 
 # --- DTMF opsætning ---
 FREQS_LOW  = (697, 770, 852, 941)
@@ -179,7 +180,9 @@ class DTMFDetector:
         digits = []
         
         nblocks = 1 + max(0, (len(audio) - self.block) // self.hop) # Number of analysis blocks, based on audio length, block size and hop size, so some of these will overlap
-        
+
+        first_detected_saved = False
+
         # Loop over all blocks 
         for bi in range(nblocks):
             start = bi * self.hop
@@ -245,7 +248,19 @@ class DTMFDetector:
 
             # If all criteria are met, we consider the detection valid
             good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
-            
+
+            # Save first detected good block for analysis
+            if good and not first_detected_saved:
+                first_detected_saved = True
+                Plotting.save_block_txt(seg, seg_f,
+                    bi, t_ms, lf, hf, E_low, E_high,
+                    l_abs_db, l2_db, h_abs_db, h2_db,
+                    blk_db, snr_low_db, snr_high_db,
+                    l_dom_db, h_dom_db, twist,
+                    sep_ok, abs_ok, twist_ok, dom_ok, snr_ok,
+                    good, LUT
+                )
+                        
             # Map to correct DTMF frequency number or "?" if the detection was not good
             sym = LUT.get((lf, hf), "?") if good else "?"
 
