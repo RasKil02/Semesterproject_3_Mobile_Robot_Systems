@@ -25,10 +25,10 @@ class AudioSampler:
     
     def setupDevice(self, device):
     # Behold eksisterende output-device (sæt ikke None)
-        cur_out = sd.default.device
-        sd.default.device = (device, cur_out)
+        cur = sd.default.device
+        current_out = cur[1] if isinstance(cur, (list, tuple)) else None
+        sd.default.device = (device, current_out)  # <-- denne linje er fixet
 
-        # Hent device-info og log
         info = sd.query_devices(device, 'input')
         native_fs = float(info['default_samplerate'])
         print(f"[Device] name={info['name']}, default_samplerate={native_fs} Hz")
