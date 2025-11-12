@@ -1,0 +1,34 @@
+1. checksum
+
+Jeg har valgt at bruge CRC i stedet for fx Paritet, som tæller om antal 1'ere er lige/ulige, da
+Paritet ikke opdager hvis to bits skifter plads. Paritet opgaver kun hvis et bit skifter fra 0 til 1 eller omvendt.
+Den opdager heller ikke en fejl hvis 2 bits skifter.
+
+- Checksum tager en 4 bit streng og konvertere det så om til et 12 bit tal ligesom vi gør med DTMF tonerne
+- Den kører så CRC algoritmen som laver en 3 bit checksum. 
+- Dette 3 bit tal kan så representeres som et tal mellem
+  0-7, som kan afspilles som en DTMF tone. 
+- Robot modtager 4 kommando og 1 checksum DTMF tone.
+- Laver de første 4 om til 12 bits
+- Beregner sin egen checksum ud fra de 12 bits
+- Sammenligner med d. 5 lud den modtagne checksum
+- Hvis de matcher, så er kommando gyldig
+- Hvis de ikke matcher, så ignoreres kommandoen og der bliver sendt en ny.
+
+CRC forklaret:
+
+polynomial_bitstring: polynomiet (generatoren) som bitstreng (giver længden af output bit streng)
+
+input_padded[i]     = input_padded[i] XOR polynomial[0]
+input_padded[i + 1] = input_padded[i + 1] XOR polynomial[1]
+input_padded[i + 2] = input_padded[i + 2] XOR polynomial[2]
+input_padded[i + 3] = input_padded[i + 3] XOR polynomial[3]
+
+
+Validering af sendt data
+timeout
+
+ting der måske skal laves:
+enheds-ID for højtaler.
+sekvensnummer
+collisions detection

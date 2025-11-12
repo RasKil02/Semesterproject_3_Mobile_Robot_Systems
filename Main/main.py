@@ -19,9 +19,13 @@ def testRobotMovement():
         node.destroy_node()
         rclpy.shutdown()
 
-
 def runRobotWithRoutePlanner(command: str):
+<<<<<<< HEAD
     rclpy.init()
+=======
+    """Run the robot route planner based on the received command string."""
+    rclpy.init() # meaby should be in main instead of all functions
+>>>>>>> bd4e54e (Checksum klasse)
     node = RoutePlanner()
     try:
         node.chooseRoute(command)
@@ -58,7 +62,7 @@ def readCommand():
     print(digits if digits else "(none)")
     return digits
 
-
+# Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
 def convertCommand(command: str) -> str:
     if len(command) % 2:
         raise ValueError("Længden skal være lige (par af cifre).")

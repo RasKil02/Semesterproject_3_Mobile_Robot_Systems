@@ -75,3 +75,9 @@ class protocol:
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
                 sd.wait(1)
+
+    def compute_parity(bits: str) -> str:
+        count_ones = bits.count('1')
+        # Paritet: 0 hvis lige antal 1'ere, 1 hvis ulige antal 1'ere
+        return '0' if count_ones % 2 == 0 else '1'
+
