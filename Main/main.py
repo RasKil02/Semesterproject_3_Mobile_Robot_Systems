@@ -38,12 +38,12 @@ def runRobotWithRoutePlanner(command: str):
 
 def readCommand():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--fs", type=int, default=8000)
-    ap.add_argument("--out", type=str, default="output.wav")
+    ap.add_argument("--fs", type=int, default=44100)
     ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms", type=float, default=7.5)
+    ap.add_argument("--hop_ms",   type=float, default=7.5)
     args = ap.parse_args()
 
+    # --- Create detector ---
     detector = DTMFDetector(
         fs=args.fs,
         block_ms=args.block_ms,
@@ -53,17 +53,19 @@ def readCommand():
         twist_pos_db=+4, twist_neg_db=-8
     )
 
+    # --- Stabilizer ---
     stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
-    
-    # NEW: we don't record duration anymore, we stream
+
+    # --- Audio sampler (streaming) ---
     sampler = AudioSampler(fs=args.fs)
 
-    print("Listening for DTMF command (*# + 5 digits)...")
+    print("Listening for DTMF command (*#, then 5 digits)...")
     cmd = detector.stream_and_detect(stabilizer, sampler)
 
     print("\n--- Detected command ---")
-    print(cmd)
+    print(cmd if cmd else "(none)")
     return cmd
+
 
 # Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
 def convertCommand(command: str) -> str:
@@ -106,7 +108,7 @@ if __name__ == "__main__":
     running = True
     
     while running:
-        command = readUntilDetected()  # Read command until a valid one is detected
+        command = readCommand()
     
         proto = Protocol()
         is_valid = isValidCommand(command, proto) # Check if command is valid - Checksum validation
