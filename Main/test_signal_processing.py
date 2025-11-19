@@ -6,7 +6,7 @@ from SignalProc.AudioSampling import AudioSampler
 
 def readCommand():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--fs", type=int, default=8000)
+    ap.add_argument("--fs", type=int, default=44100)
     ap.add_argument("--block_ms", type=float, default=30.0)
     ap.add_argument("--hop_ms",   type=float, default=7.5)
     args = ap.parse_args()

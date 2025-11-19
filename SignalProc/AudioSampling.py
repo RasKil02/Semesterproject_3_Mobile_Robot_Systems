@@ -30,17 +30,10 @@ class AudioSampler:
         device = self.searchForDevices()
         native_fs = self.setupDevice(device)
 
-        # Try to run the microphone directly at 8 kHz
+        # Always use the device's native sample rate
+        rec_fs = int(native_fs)
         use_resample = False
-        try:
-            sd.check_input_settings(device=device, samplerate=self.fs, channels=1)
-            rec_fs = self.fs
-            print(f"[FS] Using telephony fs={self.fs} Hz")
-        except Exception:
-            # Device can't do 8 kHz → use native + resample
-            rec_fs = int(native_fs)
-            use_resample = True
-            print(f"[FS] Device cannot run at {self.fs} Hz, using {rec_fs} Hz and resampling.")
+        print(f"[FS] Using native sample rate: {rec_fs} Hz")
 
         # Open the input stream
         with sd.InputStream(
