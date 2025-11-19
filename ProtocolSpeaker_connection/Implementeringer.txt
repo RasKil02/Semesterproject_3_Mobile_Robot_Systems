@@ -1,33 +1,88 @@
 1. checksum
+- Baggrund
+Vi laver polynomialdivision med modulos 2. Dette betyder vi dividere to polynomier som kan har tallene 0 og 1.
+Normalt når man bruger Polynomialdivision, så bruger man long divison metoden:
+1. Sorter polynomierne efter fladende grader
+2. Divider det første led i tælleren med det første led i nævneren.
+3. Gang hele nævneren med resultatet og træt det fra tælleren.
+4. Gentag processen med resten, indtil graden af resten er laverer end nævnerens grad. 
 
+Eksempel: 
+(6x³+5x²-7x+2)/(2x-1)
+1. 6x³/2x=3x²
+De 3x² bliver vores første tal
+
+3x²(2x-1)=6x³-3x²
+(6x³ +5x²)-(6x³-3x²)=8x²
+Nye tæller bliver: (8x²-7x+2)
+Dette gentages så.. og giver resultatet 3x²+4x-3/2 +(1/2)/(2x-1)
+
+Hvordan hænger dette så sammen med polynomialdivision med modulos 2? 
+Når man kun har 2 tal 0 og 1, så kan man ikke gøre alt 
+dette. Når man dividere, så får man enten 0 eller 1 som kofficienter. Hvis tæller er 0, som får man altid 0. Hvis tæller er 1
+Så får man altid 1. Nu ganges så. Men da koefficienter altid er 0 eller 1, så ændrer de sig ikke kun graden medmindre det er 0 og så bliver det hele bare 0. Nu trækkes resultatet så fra tælleren. Denne operation er dog det samme som XOR operationen:
+1-1 = 0
+1-0 = 1
+0-1 = 1
+0-0 = 0
+
+
+- Anvedelse
 Jeg har valgt at bruge CRC i stedet for fx Paritet, som tæller om antal 1'ere er lige/ulige, da
 Paritet ikke opdager hvis to bits skifter plads. Paritet opgaver kun hvis et bit skifter fra 0 til 1 eller omvendt.
 Den opdager heller ikke en fejl hvis 2 bits skifter.
 
-- Checksum tager en 4 bit streng og konvertere det så om til et 12 bit tal ligesom vi gør med DTMF tonerne
-- Den kører så CRC algoritmen som laver en 3 bit checksum. 
-- Dette 3 bit tal kan så representeres som et tal mellem
-  0-7, som kan afspilles som en DTMF tone. 
-- Robot modtager 4 kommando og 1 checksum DTMF tone.
-- Laver de første 4 om til 12 bits
-- Beregner sin egen checksum ud fra de 12 bits
-- Sammenligner med d. 5 lud den modtagne checksum
-- Hvis de matcher, så er kommando gyldig
-- Hvis de ikke matcher, så ignoreres kommandoen og der bliver sendt en ny.
+def checksum_CRC(self,
+     input_bitstring, poly_bitstring="1011", initial_filler='0'):
+        """Calculate the CRC remainder of a string of bits using the given polynomial."""
+        polynomial = list(poly_bitstring)  # Konverter polynomiet til en liste for mutabilitet
+        polynomial_length = len(poly_bitstring)  # Længden af polynomiet, fx 4
 
-CRC forklaret:
+        if len(input_bitstring) != 12:
+            raise ValueError("Input bitstring must be 12 bits long.")
 
-polynomial_bitstring: polynomiet (generatoren) som bitstreng (giver længden af output bit streng)
+        # Append zeros to the input (length = degree of polynomial - 1)
+        # Fx: "110110111011" + '0' * (4-1) = "110110111011000"
+        input_padded = input_bitstring + initial_filler * (polynomial_length - 1)
 
-input_padded[i]     = input_padded[i] XOR polynomial[0]
-input_padded[i + 1] = input_padded[i + 1] XOR polynomial[1]
-input_padded[i + 2] = input_padded[i + 2] XOR polynomial[2]
-input_padded[i + 3] = input_padded[i + 3] XOR polynomial[3]
+        # Konverter input til liste for at kunne ændre bits under divisionen
+        input_padded = list(input_padded)  # ['1', '1', '0', '1', ... '0', '0', '0']
+
+        # Loop gennem hvert bit i den oprindelige inputstreng
+        for i in range(len(input_bitstring)): 
+
+        # Hvis det øverste bit er 0, så får man altid 0 ud fra tæller/nævner. Så man kommer til at gange hele sin nævner med 0, hvlket bare giver 0. Derfor går man kun videre hvis tæller er 1. Derudover vælger man altid startbit i poly_bitstring til at være 1, så man ikke dividere med 0. Dette betyder også at resultatet altid vil være 1, så når man ganger resultater med nævneren, så får man bare nævneren. Så proces 3 med at gange kan bare ignorerers, da det ikke gør noget.
+            if input_padded[i] == '1':
+
+            # Her laves trækkes nævneren fra tælleren. Da det er en XOR operation der svare til det, så skal længde af bits være den samme for både tæller og nævner. Derfor tager man sit bit og de næste 3 bit med, da nævneren har længden 4.Dette er også derfor man har lavet input_padded, da det sidste pit man skal tjekke skal have 3 bits mere efterfølende for at lave denne operation.
+                for j in range(polynomial_length):  # Udfør XOR med polynomiets bits
+                    # XOR operation: hvis bits er forskellige, bliver resultat '1', ellers '0'
+                    input_padded[i + j] = str(int(input_padded[i + j] != polynomial[j]))
+                    # input_padded ændres ved hver XOR operation
+
+        # input_padded er nu den modificerede bitstreng efter divisionen
+
+        # Resten (remainder) er de sidste (polynomial_length - 1) bits. Altså den rest man normalt for fra polynomiedivision.
+        remainder = ''.join(input_padded[-(polynomial_length - 1):])
+        return remainder
 
 
+
+
+
+
+
+- Robotsiden
+På robotten aflæser DTMF toner fx 1234 og konverteres til en streng "1234" med readCommand.
+
+Jeg sender 5 DTMF toner afsted. Jeg gemmer d. 5 tone og tjekker om det jeg skal med checksum. Derefter fjernes den og
+der regnes videre kun med de 4 DTMF toner, da convertCommand kun tager 4 DTMF toner.
+
+Der skal så sendes denne DTMF tone tilbage   
+
+- Opgaaver:
 Validering af sendt data
 timeout
-
 ting der måske skal laves:
 enheds-ID for højtaler.
 sekvensnummer

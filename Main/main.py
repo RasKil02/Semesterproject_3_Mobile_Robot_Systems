@@ -20,12 +20,7 @@ def testRobotMovement():
         rclpy.shutdown()
 
 def runRobotWithRoutePlanner(command: str):
-<<<<<<< HEAD
     rclpy.init()
-=======
-    """Run the robot route planner based on the received command string."""
-    rclpy.init() # meaby should be in main instead of all functions
->>>>>>> bd4e54e (Checksum klasse)
     node = RoutePlanner()
     try:
         node.chooseRoute(command)
@@ -60,7 +55,7 @@ def readCommand():
     digits = detector.record_and_detect(args.duration, args.out, stabilizer=stab)
     print("\n--- Detected digits ---")
     print(digits if digits else "(none)")
-    return digits
+    return digits # Return the detected command string (DTMF toner 1234 giver en string "1234")
 
 # Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
 def convertCommand(command: str) -> str:
@@ -73,7 +68,7 @@ def convertCommand(command: str) -> str:
         if a not in "01234567" or b not in "01234567":
             raise ValueError("Kun 0-7 er tilladt.")
         parts.append(f'{format(int(a), "03b")}{format(int(b), "03b")}')
-    return "".join(parts)
+    return "".join(parts) # Laver en 12 bit streng til samlet streng af 6 bit par
 
 
 if __name__ == "__main__":
