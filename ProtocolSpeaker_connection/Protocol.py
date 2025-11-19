@@ -9,6 +9,7 @@ class Protocol:
         self.supplyAdress = None
         self.start = '*'
         self.stop = '#'
+        self.command = None
  
     def print_command(self):
         print(self.roomAddress)

@@ -18,6 +18,7 @@ from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
+from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 #import serial
@@ -26,16 +27,37 @@ import argparse
 proto = Protocol()
 #route = RoutePlanner()
 
+def readCommandDuration(duration):
+    # Du kan fjerne argparse, hvis du ikke længere vil bruge kommandolinjeargumenter
+    fs = 8000
+    out = "output.wav"
+    block_ms = 30.0
+    hop_ms = 7.5
+
+    detector = DTMFDetector(
+        fs=fs,
+        block_ms=block_ms,
+        hop_ms=hop_ms,
+        lowcut=620, highcut=1700, bp_order=4,
+        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
+        twist_pos_db=+4, twist_neg_db=-8
+    )
+
+    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+
+    digits = detector.record_and_detect(duration, out, stabilizer=stab)
+    print("\n--- Detected digits ---")
+    print(digits if digits else "(none)")
+    return digits # Return the detected command string (DTMF toner 1234 giver en string "1234")
 
 def readCommand():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--duration", type=float, default=10.0)
-    ap.add_argument("--fs", type=int, default=8000)
-    ap.add_argument("--out", type=str, default="output.wav")
+    ap.add_argument("--fs", type=int, default=44100)
     ap.add_argument("--block_ms", type=float, default=30.0)
     ap.add_argument("--hop_ms",   type=float, default=7.5)
     args = ap.parse_args()
 
+    # --- Create detector ---
     detector = DTMFDetector(
         fs=args.fs,
         block_ms=args.block_ms,
@@ -45,12 +67,19 @@ def readCommand():
         twist_pos_db=+4, twist_neg_db=-8
     )
 
-    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    # --- Stabilizer ---
+    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
 
-    digits = detector.record_and_detect(args.duration, args.out, stabilizer=stab)
-    print("\n--- Detected digi        # Test robot movementts ---")
-    print(digits if digits else "(none)")
-    return digits # Return the detected command string (DTMF toner 1234 giver en string "1234")
+    # --- Audio sampler (streaming) ---
+    sampler = AudioSampler(fs=args.fs)
+
+    print("Listening for DTMF command (*#, then 5 digits)...")
+    cmd = detector.stream_and_detect(stabilizer, sampler)
+
+    print("\n--- Detected command ---")
+    print(cmd if cmd else "(none)")
+    return cmd
+
 
 # Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
 def convertCommand(command: str) -> str:
@@ -80,67 +109,72 @@ def runRobotWithRoutePlanner(command: str):
         rclpy.shutdown()
 
 def main():
+    running = True
+    while running:
+        command = readCommand()
+        print ("Received command: " + command)
 
-    command = readCommand()
-    print ("Received command: " + command)
+        # Gem den sidste DTMF tone til checksum validering
+        checksumDigit = (command[6])
+        command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+        print("Command for checksum: " + command)
 
-    # Gem den sidste DTMF tone til checksum validering
-    checksumDigit = (command[6])
-    command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
-    print("Command for checksum: " + command)
+        print ("Checksum DTMF tone: " + checksumDigit)
+        received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
+        print("Converted command to bits:", received_bitstring)
+        remainder, is_valid = proto.Check_CRC(received_bitstring)
+        print("Remainder after CRC:", remainder)
+        print("Is CRC valid?", is_valid)
 
-    print ("Checksum DTMF tone: " + checksumDigit)
-    received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
-    print("Converted command to bits:", received_bitstring)
-    remainder, is_valid = proto.Check_CRC(received_bitstring)
-    print("Remainder after CRC:", remainder)
-    print("Is CRC valid?", is_valid)
+        is_valid = False  # For testing NACK functionality
 
-    if not is_valid:
-        print("Checksum invalid, sending NACK DTMF tone back to host computer.")
-        # Send NACK DTMF tone back to host computer
-        nack_command = "A"  # Assuming '9' represents NACK
+        if not is_valid:
+            print("Checksum invalid, sending NACK DTMF tone back to host computer.")
+            # Send NACK DTMF tone back to host computer
+            nack_command = "A"  # Assuming '9' represents NACK
+            
+            while True:
+                time.sleep (10)  # Wait for computer to be ready
+                proto.play_DTMF_command(nack_command)
+                command = readCommandDuration(10)  # Wait for new command with timeout
+
+                if command is not None:
+                    print("Received command after NACK: " + command)
+                    command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+                    print("Command for checksum: " + command)
+
+                    received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
+                    print("Converted command to bits:", received_bitstring)
+                    remainder, is_valid = proto.Check_CRC(received_bitstring)
+                    print("Remainder after CRC:", remainder)
+                    print("Is CRC valid?", is_valid)
+
+                    if is_valid:
+                        print("Checksum valid, proceeding with route planning.")
+                        runRobotWithRoutePlanner(received_bitstring)
+                        break
+                    else:
+                        print("Checksum still invalid, waiting for new command.")
+
+                    if command is None:
+                        print("Timeout reached, no command received.")
+
+
+        roomadress = command[2:4]
+        roomadress = int(roomadress)
+        print("Room address: " + str(roomadress))
+
+        supplyroom = command[4:6]
+        print("Supply command: " + supplyroom)
+
+        #supplyroom = int(supplyroom)
+        #print("Supply room number: " + str(supplyroom))
+
+        #route.send_data(supplyroom)
+
+
+
         
-        while True:
-            proto.play_DTMF_command(nack_command)
-            command = readCommandDuration(10)  # Wait for new command with timeout
-
-            if command is not None:
-                print("Received command after NACK: " + command)
-                command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
-                print("Command for checksum: " + command)
-
-                received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
-                print("Converted command to bits:", received_bitstring)
-                remainder, is_valid = proto.Check_CRC(received_bitstring)
-                print("Remainder after CRC:", remainder)
-                print("Is CRC valid?", is_valid)
-
-                if is_valid:
-                    print("Checksum valid, proceeding with route planning.")
-                    runRobotWithRoutePlanner(received_bitstring)
-                    break
-                else:
-                    print("Checksum still invalid, waiting for new command.")
-
-                if command is None:
-                    print("Timeout reached, no command received.")
-
-
-    roomadress = command[2:4]
-    roomadress = int(roomadress)
-    print("Room address: " + str(roomadress))
-
-
-    #supplyroom = command[4:6]
-    #print("Supply command: " + supplyroom)
-
-    #supplyroom = int(supplyroom)
-    #print("Supply room number: " + str(supplyroom))
-
-    #route.send_data(supplyroom)
-
-    
 
 
 
@@ -148,17 +182,26 @@ def main():
 
 
 
-    # Fjern den sidste DTMF tone for at lave convertCommand med de første 4 toner
+        # Fjern den sidste DTMF tone for at lave convertCommand med de første 4 toner
 
-    # Skal have en ACK fra PC programmet
-    # Hvis NACK så: skal bede om ny kommando eller bare vente og optage igen
+        # Skal have en ACK fra PC programmet
+        # Hvis NACK så: skal bede om ny kommando eller bare vente og optage igen
 
-    # Hvis ACD så:  
+        # Hvis ACD så:  
 
 
-    #converted = convertCommand(command)
-    #print("Converted command:", converted)
-    #runRobotWithRoutePlanner(converted)
+        #converted = convertCommand(command)
+        #print("Converted command:", converted)
+        #runRobotWithRoutePlanner(converted)
+
+
+    # Exit loop with keyboard interrupt
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            running = False
+            print("Exiting program.")
+
 
 if __name__ == "__main__":
     main()
