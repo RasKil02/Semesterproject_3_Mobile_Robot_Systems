@@ -130,7 +130,7 @@ class Protocol:
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
                 sd.wait(1)
-                time.sleep(0.3)
+                time.sleep(0.5)
 
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):

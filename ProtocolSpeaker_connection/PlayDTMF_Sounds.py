@@ -55,7 +55,7 @@ def main():
         proto.play_dtmf_command_checksum()
 
         while True:
-            NACKCommand = readCommandDuration(10.0)
+            NACKCommand = readCommandDuration(30.0)
             print("Received NACK command:", NACKCommand)
             if (not NACKCommand):
                 print("No command received, exiting.")
