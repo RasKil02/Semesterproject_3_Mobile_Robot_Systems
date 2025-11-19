@@ -1,6 +1,7 @@
 import time
 import math
 import rclpy
+from machine import Pin
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
 

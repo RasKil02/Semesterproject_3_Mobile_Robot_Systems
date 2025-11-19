@@ -20,6 +20,7 @@ from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 import time
 import argparse
+import serial
 
 
 proto = Protocol()
