@@ -80,6 +80,15 @@ def runRobotWithRoutePlanner(command: str):
 def main():
     command = readCommand()
     print ("Received command: " + command)
+
+    supplyroom = command[4:6]
+    print("Supply command: " + supplyroom)
+
+    supplyroom = int(supplyroom)
+    print("Supply room number: " + str(supplyroom))
+
+
+
     # Gem den sidste DTMF tone til checksum validering
     checksumDigit = (command[4])
     print ("Checksum DTMF tone: " + checksumDigit)
@@ -88,7 +97,6 @@ def main():
     remainder, is_valid = proto.Check_CRC(received_bitstring)
     print("Remainder after CRC:", remainder)
     print("Is CRC valid?", is_valid)
-
 
 
     # Fjern den sidste DTMF tone for at lave convertCommand med de første 4 toner

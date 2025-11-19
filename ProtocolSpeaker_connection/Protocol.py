@@ -189,6 +189,14 @@ class Protocol:
         
         self.play_DTMF_command(command + checkSumDTMF)
 
+    def split_6bit_to_two_3bit(self, bits_6):
+        if len(bits_6) != 6 or any(b not in '01' for b in bits_6):
+            raise ValueError("Input skal være en 6-bit binærstreng")
+        first_3bit = bits_6[:3]
+        second_3bit = bits_6[3:]
+        return first_3bit, second_3bit
+
+
 
     def compute_parity(bits: str) -> str:
         count_ones = bits.count('1')
