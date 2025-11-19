@@ -3,6 +3,8 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
+import serial
+import time
 
 
 class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan bruge rclpy funktioner
@@ -117,3 +119,15 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             self.executeRoute(supplies, speed, durations[dest], rotation_speed)
         else:
             self.get_logger().warn('Unknown Destination')
+
+    def send_data(data):
+            # Åbn UART-porten
+        ser = serial.Serial(
+        port="/dev/serial0",   # Raspberry Pi UART port
+        baudrate=9600,         # Samme baudrate som Pico
+        timeout=1)
+
+        ser.write(data.encode())
+        print("Sent:", data)
+
+

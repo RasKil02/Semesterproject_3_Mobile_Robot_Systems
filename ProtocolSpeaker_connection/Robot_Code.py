@@ -20,9 +20,11 @@ from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 import time
 import argparse
+import serial
 
 
 proto = Protocol()
+#route = RoutePlanner()
 
 
 def readCommand():
@@ -78,25 +80,84 @@ def runRobotWithRoutePlanner(command: str):
         rclpy.shutdown()
 
 def main():
+
     command = readCommand()
     print ("Received command: " + command)
 
-    supplyroom = command[4:6]
-    print("Supply command: " + supplyroom)
-
-    supplyroom = int(supplyroom)
-    print("Supply room number: " + str(supplyroom))
-
-
-
     # Gem den sidste DTMF tone til checksum validering
-    checksumDigit = (command[4])
+    checksumDigit = (command[6])
+    command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+    print("Command for checksum: " + command)
+
     print ("Checksum DTMF tone: " + checksumDigit)
     received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
     print("Converted command to bits:", received_bitstring)
     remainder, is_valid = proto.Check_CRC(received_bitstring)
     print("Remainder after CRC:", remainder)
     print("Is CRC valid?", is_valid)
+
+    if not is_valid:
+        print("Checksum invalid, sending NACK DTMF tone back to host computer.")
+        # Send NACK DTMF tone back to host computer
+        nack_command = "A"  # Assuming '9' represents NACK
+        proto.play_DTMF_command(nack_command)
+
+
+    #supplyroom = command[4:6]
+    #print("Supply command: " + supplyroom)
+
+    #supplyroom = int(supplyroom)
+    #print("Supply room number: " + str(supplyroom))
+
+    #route.send_data(supplyroom)
+
+
+""""
+def main():
+    while True:
+        command = readCommand()
+        print("Received command: " + command)
+
+        checksumDigit = command[6]
+        payload = command[2:7]  # De fire datatoner
+        print("Command for checksum: " + payload)
+
+        print("Checksum DTMF tone: " + checksumDigit)
+
+        received_bitstring = proto.decimal_string_to_3bit_binary_string(payload)
+        print("Converted command to bits:", received_bitstring)
+
+        remainder, is_valid = proto.Check_CRC(received_bitstring)
+        print("Remainder after CRC:", remainder)
+        print("Is CRC valid?", is_valid)
+
+        if not is_valid:
+            print("Checksum invalid → sending NACK...")
+            proto.play_DTMF_command("A")  # Send NACK
+
+            # Vent op til 10 sekunder på en ny kommando
+            print("Waiting 10 seconds for retransmission...")
+
+            new_cmd = read_with_timeout(10)
+
+            if new_cmd is None:
+                print("No command received → sending NACK again")
+                proto.play_DTMF_command("A")
+                continue  # Gå tilbage og vent igen
+
+            # Hvis der faktisk kom noget:
+            command = new_cmd
+            print("Received retransmitted command: " + command)
+            continue  # Verificér den nye kommando
+
+        # -----------------
+        # Hvis CRC er VALID:
+        # -----------------
+        print("CRC valid! Proceeding with command...")
+        break   # Eller fortsæt med din normale logik
+"""""
+
+
 
 
     # Fjern den sidste DTMF tone for at lave convertCommand med de første 4 toner
@@ -113,3 +174,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+    

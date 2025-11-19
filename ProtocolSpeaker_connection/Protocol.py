@@ -1,5 +1,6 @@
 import numpy as np
 import sounddevice as sd
+import time
 
 class Protocol:
     def __init__(self, name = "default_protocol"):
@@ -203,3 +204,10 @@ class Protocol:
         # Paritet: 0 hvis lige antal 1'ere, 1 hvis ulige antal 1'ere
         return '0' if count_ones % 2 == 0 else '1'
 
+    def read_with_timeout(timeout=10):
+        start = time.time()
+        while time.time() - start < timeout:
+            cmd = readCommand()
+            if cmd:  # Hvis der modtages noget
+                return cmd
+        return None  # Timeout
