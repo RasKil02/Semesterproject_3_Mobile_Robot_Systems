@@ -92,16 +92,18 @@ def readUntilDetected():
             print("Ugyldig kommando modtaget. Prøv igen.")
 
 def isValidCommand(command: str, proto: Protocol):
-    print ("Received command: " + command)
     # Gem den sidste DTMF tone til checksum validering
     checksumDigit = (command[6])
+    command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+    print("Command for checksum: " + command)
+
     print ("Checksum DTMF tone: " + checksumDigit)
     received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
     print("Converted command to bits:", received_bitstring)
     remainder, is_valid = proto.Check_CRC(received_bitstring)
     print("Remainder after CRC:", remainder)
     print("Is CRC valid?", is_valid)
-
+    return received_bitstring, is_valid
 
 if __name__ == "__main__":
     
@@ -111,12 +113,12 @@ if __name__ == "__main__":
         command = readCommand()
     
         proto = Protocol()
-        is_valid = isValidCommand(command, proto) # Check if command is valid - Checksum validation
-    
+        received_bitstring, is_valid = isValidCommand(command, proto) # Check if command is valid - Checksum validation
+        print("Received bitstring:", received_bitstring)
+
         if is_valid:
-            print("Command is valid. Executing route planner...")
-            converted_command = convertCommand(command[:6]) # Exclude checksum digit for conversion  
-            runRobotWithRoutePlanner(converted_command)
+            print("Command is valid. Executing route planner...")  
+            runRobotWithRoutePlanner(received_bitstring)
         else:
             print("Invalid command received. Aborting operation.")
             
