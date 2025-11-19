@@ -29,7 +29,7 @@ class Plotting:
         
     @staticmethod
     def save_block_txt(seg, seg_f, bi, t_ms, lf, hf, E_low, E_high,
-                    l_abs_db, l2_db, h_abs_db, h2_db,
+                    l_abs_db, l2_db, h_abs_db, h2_db,   
                     blk_db, snr_low_db, snr_high_db,
                     l_dom_db, h_dom_db, twist,
                     sep_ok, abs_ok, twist_ok, dom_ok, snr_ok,
