@@ -20,9 +20,11 @@ from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 import time
 import argparse
+#import serial
 
 
 proto = Protocol()
+#route = RoutePlanner()
 
 
 def readCommand():
@@ -78,16 +80,71 @@ def runRobotWithRoutePlanner(command: str):
         rclpy.shutdown()
 
 def main():
+
     command = readCommand()
     print ("Received command: " + command)
+
     # Gem den sidste DTMF tone til checksum validering
-    checksumDigit = (command[4])
+    checksumDigit = (command[6])
+    command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+    print("Command for checksum: " + command)
+
     print ("Checksum DTMF tone: " + checksumDigit)
     received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
     print("Converted command to bits:", received_bitstring)
     remainder, is_valid = proto.Check_CRC(received_bitstring)
     print("Remainder after CRC:", remainder)
     print("Is CRC valid?", is_valid)
+
+    if not is_valid:
+        print("Checksum invalid, sending NACK DTMF tone back to host computer.")
+        # Send NACK DTMF tone back to host computer
+        nack_command = "A"  # Assuming '9' represents NACK
+        
+        while True:
+            proto.play_DTMF_command(nack_command)
+            command = readCommandDuration(10)  # Wait for new command with timeout
+
+            if command is not None:
+                print("Received command after NACK: " + command)
+                command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+                print("Command for checksum: " + command)
+
+                received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
+                print("Converted command to bits:", received_bitstring)
+                remainder, is_valid = proto.Check_CRC(received_bitstring)
+                print("Remainder after CRC:", remainder)
+                print("Is CRC valid?", is_valid)
+
+                if is_valid:
+                    print("Checksum valid, proceeding with route planning.")
+                    runRobotWithRoutePlanner(received_bitstring)
+                    break
+                else:
+                    print("Checksum still invalid, waiting for new command.")
+
+                if command is None:
+                    print("Timeout reached, no command received.")
+
+
+    roomadress = command[2:4]
+    roomadress = int(roomadress)
+    print("Room address: " + str(roomadress))
+
+
+    #supplyroom = command[4:6]
+    #print("Supply command: " + supplyroom)
+
+    #supplyroom = int(supplyroom)
+    #print("Supply room number: " + str(supplyroom))
+
+    #route.send_data(supplyroom)
+
+    
+
+
+
+
 
 
 
@@ -105,3 +162,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+    

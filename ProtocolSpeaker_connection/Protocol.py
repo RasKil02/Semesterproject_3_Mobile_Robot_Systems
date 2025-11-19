@@ -1,5 +1,6 @@
 import numpy as np
 import sounddevice as sd
+import time
 
 class Protocol:
     def __init__(self, name = "default_protocol"):
@@ -20,8 +21,23 @@ class Protocol:
         self.supplyAdress = address
 
     def set_command(self):
-        self.roomAddress = input("Enter room address: ")
-        self.supplyAdress = input("Enter supply address: ")
+        while True:
+            while True:
+                # Indtast og valider room og supply adresser
+                self.roomAddress = input("Enter room address: ")
+                if (self.roomAddress <= 7 or self.roomAddress >= 0):
+                    break
+                else:
+                    print("Room address must be between 0 and 7. Try again: ")
+
+            while True:
+                self.supplyAdress = input("Enter supply address: ")
+
+                if (self.supplyAdress <= 2 or self.supplyAdress >= 1):
+                    break
+                else:
+                    print("Supply address must be 1 or 2. Try again: ")
+            break
 
         # Konverter hver del separat
         room_dtmf = self.translateNumberToDTMFNumbers(self.roomAddress)
@@ -198,9 +214,16 @@ class Protocol:
         self.play_DTMF_command(startCommand + command + checkSumDTMF)
 
 
+    def split_6bit_to_two_3bit(self, bits_6):
+        if len(bits_6) != 6 or any(b not in '01' for b in bits_6):
+            raise ValueError("Input skal være en 6-bit binærstreng")
+        first_3bit = bits_6[:3]
+        second_3bit = bits_6[3:]
+        return first_3bit, second_3bit
+
+
 
     def compute_parity(bits: str) -> str:
         count_ones = bits.count('1')
         # Paritet: 0 hvis lige antal 1'ere, 1 hvis ulige antal 1'ere
         return '0' if count_ones % 2 == 0 else '1'
-

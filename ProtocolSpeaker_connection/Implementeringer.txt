@@ -81,8 +81,9 @@ der regnes videre kun med de 4 DTMF toner, da convertCommand kun tager 4 DTMF to
 Der skal så sendes denne DTMF tone tilbage   
 
 - Opgaaver:
-Validering af sendt data
-timeout
+1.Sende DTMF tilbage til hostcomputer, hvis checksum ikke er valid
+2.timeout til at sende en DTMF tone igen tilbage til hostcomputer.
+
 ting der måske skal laves:
 enheds-ID for højtaler.
 sekvensnummer
