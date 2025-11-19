@@ -144,8 +144,8 @@ class DTMFDetector:
                  sep_db: float = 5.0,       # separations-tærskel
                  dom_db: float = 4.0,       # dominans-tærskel
                  snr_db: float = 8.0,       # SNR-tærskel
-                 twist_pos_db: float = +4.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -8.0):  # negativ twist grænse (col > row)
+                 twist_pos_db: float = +30.0,   # positiv twist grænse (row > col)
+                 twist_neg_db: float = -30.0):  # negativ twist grænse (col > row)
         
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
@@ -167,112 +167,103 @@ class DTMFDetector:
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
 
-    # Record audio and detect DTMF digits
-    def record_and_detect(self, duration_s: float, out_wav: str, stabilizer) -> str:
-        sampler = AudioSampler(duration_s, self.fs, out_wav) # Sets up audio sampler (instance of AudioSampler class)
-        audio = sampler.record_audio() # Uses the record_audio method to record audio for a set duration
-        sampler.save_audio()
-        return self.analyze(audio, stabilizer=stabilizer) # Analyzes the recorded audio and returns detected digits
-
-    # Analyze audio and return detected digits as string, takes numpy array as input and returns string
-    def analyze(self, audio: np.ndarray, stabilizer) -> str:
-        # Digits holds detected digits, later to be joined and returned as string
-        digits = []
+    # Analyze audio data for DTMF digits
+    def analyze_block(self, seg: np.ndarray, stabilizer, now_ms: float):
+          
+        if len(seg) != self.block:
+            return None
         
-        nblocks = 1 + max(0, (len(audio) - self.block) // self.hop) # Number of analysis blocks, based on audio length, block size and hop size, so some of these will overlap
+        seg = seg.astype(float)
+        seg -= seg.mean()
 
-        first_detected_saved = False
+        seg_f = self.bp.process(seg)
+        seg_f *= self.win
 
-        # Loop over all blocks 
-        for bi in range(nblocks):
-            start = bi * self.hop
-            seg = audio[start:start+self.block].astype(float) # Extract current block from audio signal, seg now holds the current block samples
+        E_low  = self.g_low.process(seg_f)
+        E_high = self.g_high.process(seg_f)
+
+        lf, l2 = self._top2(E_low,  FREQS_LOW)
+        hf, h2 = self._top2(E_high, FREQS_HIGH)
+
+        blk_db   = db10(np.mean(seg_f**2))
+        l_abs_db = db10(E_low[lf])
+        l2_db    = db10(E_low[l2])
+        h_abs_db = db10(E_high[hf])
+        h2_db    = db10(E_high[h2])
+
+        low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
+        high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
+
+        snr_low_db  = db10(E_low[lf]  / low_noise)
+        snr_high_db = db10(E_high[hf] / high_noise)
+
+        sep_ok = (l_abs_db - l2_db > self.sep_db) and (h_abs_db - h2_db > self.sep_db)
+        abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db)
+
+        twist = (l_abs_db - h_abs_db)
+        twist_ok = (self.twist_neg_db <= twist <= self.twist_pos_db)
+
+        l_dom_db = db10(E_low[lf]  / low_noise)
+        h_dom_db = db10(E_high[hf] / high_noise)
+        dom_ok   = (l_dom_db >= self.dom_db) and (h_dom_db >= self.dom_db)
+
+        snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
+
+        good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
+
+        sym = LUT.get((lf, hf), "?") if good else "?"
+
+        # IMPORTANT: use stabilizer exactly like your old analyze()
+        out = stabilizer.update(sym, now_ms=now_ms)
+
+        return out
+
+    def stream_and_detect(self, stabilizer, sampler):
+        
+        digits = []
+        start_stage = 0       # 0 = waiting for '*', 1 = waiting for '#'
+        collecting_payload = False
+
+        t_ms = 0.0
+        block_ms = 1000.0 * self.block / self.fs
+
+        for block in sampler.stream_blocks(self.block):
+            out = self.analyze_block(block, stabilizer, t_ms)
+            t_ms += block_ms
+
+            if not out:
+                continue
+
+            if not collecting_payload:
+
+                if start_stage == 0:
+                    # Expecting first start bit '*'
+                    if out == "*":
+                        digits.append(out)
+                        start_stage = 1
+                        print("Start symbol '*' detected, waiting for '#'...")
+                    # ignore everything else
+                    continue
+
+                elif start_stage == 1:
+                    # Expecting second start bit '#'
+                    if out == "#":
+                        digits.append(out)
+                        collecting_payload = True
+                        print("Second symbol '#' detected, collecting payload digits...")
+                    else:
+                        # WRONG second symbol → reset to stage 0
+                        print(f"Expected '#', but got '{out}'. Resetting to wait for '*'.")
+                        digits.clear()
+                        start_stage = 0
+                    continue
+                
+            digits.append(out)
             
-            if len(seg) < self.block:
-                break
+            print(f"Detected digits so far: {''.join(digits)}")
 
-            seg -= seg.mean() # Remove DC offset
-            seg_f = self.bp.process(seg) # self.bp is an instance of BandPassFilter, this applies the bandpass filter to the current block, using its process method
-            seg_f *= self.win # Apply windowing to the filtered block
-
-            E_low  = self.g_low.process(seg_f) # Measure power at low DTMF frequencies using Goertzel algorithm
-            E_high = self.g_high.process(seg_f) # Same for high DTMF frequencies
-
-            # So now we have the energies at each DTMF frequency for the current block
-            # Which could look something like:
-            # E_low  = {697: 0.01, 770: 0.5, 852: 0.02, 941: 0.03}
-            # E_high = {1209: 0.02, 1336: 0.6, 1477: 0.01, 1633: 0.03}
-            # Which would indicate a DTMF '5' (770 Hz and 1336 Hz)
-            
-            # We have to find the two highest energies in each group
-            # We use the helper method _top2 defined below, which returns the frequencies with the highest and second highest energies
-            # So lf is the low frequency with highest energy, l2 is the second highest
-            # In the example above, lf would be 770 and l2 would be 941, and similarly for hf and h2 we would get 1336 and 1633
-            # Which would indicate a DTMF '5' (770 Hz and 1336 Hz)
-            lf, l2 = self._top2(E_low,  FREQS_LOW)
-            hf, h2 = self._top2(E_high, FREQS_HIGH)
-
-            blk_db   = db10(np.mean(seg_f**2)) # Average block energy in dB
-            
-            l_abs_db = db10(E_low[lf]); # decibal level of the dominant low frequency
-            l2_db = db10(E_low[l2]) # decibal level of the second dominant low frequency
-            
-            h_abs_db = db10(E_high[hf]); # for dominant high frequency
-            h2_db = db10(E_high[h2])
-            
-            # Now we have the decibal levels of the dominant and second dominant frequencies in both low and high groups
-            
-            # Calculate background noise levels by averaging energies of every frequency except the dominant one, for both low and high groups
-            low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
-            high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
-            
-            # Calculate SNR for both low and high frequencies, SNR (signal to noise ratio), indicates how much stronger the signal is compared to the background noise
-            snr_low_db  = db10(E_low[lf]  / low_noise)
-            snr_high_db = db10(E_high[hf] / high_noise)
-
-            # Now apply all the detection criteria, these are used to determine if the detected frequencies are valid DTMF tones
-            sep_ok = (l_abs_db - l2_db > self.sep_db) and (h_abs_db - h2_db > self.sep_db) # separation between dominant and second dominant frequencies, must exceed threshold, sep_db which currently is 5 dB. Does so for both low and high groups
-            abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db) # absolute level above average block energy, must exceed min_db threshold, currently -20 dB
-           
-            # Are the levels of the low and high frequencies almost equal, within twist thresholds
-            twist  = (l_abs_db - h_abs_db) 
-            twist_ok = (self.twist_neg_db <= twist <= self.twist_pos_db)
-
-            # Is each detectected frequency dominant enough over the background noise
-            l_dom_db = db10(E_low[lf]  / low_noise)
-            h_dom_db = db10(E_high[hf] / high_noise)
-            dom_ok   = (l_dom_db >= self.dom_db) and (h_dom_db >= self.dom_db)
-
-            # Are both tones much stronger than the background noise, exceeding the SNR threshold
-            snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
-
-            # If all criteria are met, we consider the detection valid
-            good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
-
-            # Save first detected good block for analysis
-            if good and not first_detected_saved:
-                first_detected_saved = True
-                Plotting.save_block_txt(seg, seg_f,
-                    bi, t_ms, lf, hf, E_low, E_high,
-                    l_abs_db, l2_db, h_abs_db, h2_db,
-                    blk_db, snr_low_db, snr_high_db,
-                    l_dom_db, h_dom_db, twist,
-                    sep_ok, abs_ok, twist_ok, dom_ok, snr_ok,
-                    good, LUT
-                )
-                        
-            # Map to correct DTMF frequency number or "?" if the detection was not good
-            sym = LUT.get((lf, hf), "?") if good else "?"
-
-            t_ms = (start + self.block/2) / self.fs * 1000.0 # timestamp in milliseconds for the center of the block
-            
-            out = stabilizer.update(sym, now_ms=t_ms) # Update the stabilizer with the detected symbol and current time
-            
-            # Append to digits if we have a new stable output
-            if out and (not digits or digits[-1] != out):
-                digits.append(out)
-
-        return "".join(digits)
+            if len(digits) == 7:
+                return "".join(digits)
 
     # Helper to find top 2 frequencies
     @staticmethod
