@@ -134,7 +134,7 @@ def main():
             nack_command = "A"  # Assuming '9' represents NACK
             
             while True:
-                time.sleep (10)  # Wait for computer to be ready
+                time.sleep (5)  # Wait for computer to be ready
                 proto.play_DTMF_command(nack_command)
                 command = readCommandDuration(10)  # Wait for new command with timeout
 
