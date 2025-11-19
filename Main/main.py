@@ -1,3 +1,6 @@
+import numpy as np
+import sounddevice as sd
+from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
@@ -71,10 +74,48 @@ def convertCommand(command: str) -> str:
         parts.append(f'{format(int(a), "03b")}{format(int(b), "03b")}')
     return "".join(parts) # Laver en 12 bit streng til samlet streng af 6 bit par
 
+def readUntilDetected():
+    commandRead = False
+    
+    while commandRead == False:
+        command = readCommand()
+        if len(command) == 7:
+            commandRead = True
+        else:
+            print("Ugyldig kommando modtaget. Prøv igen.")
+
+def isValidCommand(command: str, proto: Protocol):
+    print ("Received command: " + command)
+    # Gem den sidste DTMF tone til checksum validering
+    checksumDigit = (command[6])
+    print ("Checksum DTMF tone: " + checksumDigit)
+    received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
+    print("Converted command to bits:", received_bitstring)
+    remainder, is_valid = proto.Check_CRC(received_bitstring)
+    print("Remainder after CRC:", remainder)
+    print("Is CRC valid?", is_valid)
+
 
 if __name__ == "__main__":
-    # Test robot movement
-    command = readCommand()
-    converted = convertCommand(command)
-    print("Converted command:", converted)
-    runRobotWithRoutePlanner(converted)
+    
+    running = True
+    
+    while running:
+        command = readUntilDetected()  # Read command until a valid one is detected
+    
+        is_valid = isValidCommand(command, Protocol()) # Check if command is valid - Checksum validation
+    
+        if is_valid:
+            print("Command is valid. Executing route planner...")
+            converted_command = convertCommand(command[:6]) # Exclude checksum digit for conversion  
+            runRobotWithRoutePlanner(converted_command)
+        else:
+            print("Invalid command received. Aborting operation.")
+            
+        # Exit loop with keyboard interrupt
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            running = False
+            print("Exiting program.")
+            

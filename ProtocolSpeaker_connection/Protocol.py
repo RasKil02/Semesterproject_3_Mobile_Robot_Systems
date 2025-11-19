@@ -31,6 +31,13 @@ class Protocol:
         self.command = f"{room_dtmf}{supply_dtmf}"
         return self.command
 
+    def set_startcommand(self):
+        startbit = '*'
+        startbit2 = '#'
+        self.startCommand = f"{startbit}{startbit2}"
+        return self.startCommand
+
+
 
     # Translate a single number to its corresponding DTMF frequencies
     def translateNumberToDTMFfreq(self, number):
@@ -186,8 +193,10 @@ class Protocol:
         print("Checksum CRC:", checksumString)
         checkSumDTMF = self.convert3bitToString(checksumString)
         print("Checksum DTMF:", checkSumDTMF)
-        
-        self.play_DTMF_command(command + checkSumDTMF)
+
+        startCommand = self.set_startcommand()  # Kald funktionen korrekt
+        self.play_DTMF_command(startCommand + command + checkSumDTMF)
+
 
 
     def compute_parity(bits: str) -> str:
