@@ -1,105 +1,77 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import sounddevice as sd
-from scipy.io import wavfile
-from scipy.signal import resample_poly
-from SignalProc.Plotting import Plotting
+
 
 class AudioSampler:
-    def __init__(self, duration, fs, output):
-        self.duration = duration
-        self.fs = fs
-        self.output = output
-        self.audio = None
-    
+    def __init__(self, fs):
+        self.fs = fs  # Processing sample rate (normally 8000 Hz)
+
     def searchForDevices(self):
-        # Find første input-device med "usb" i navnet
         try:
             devs = sd.query_devices()
             for i, d in enumerate(devs):
-                if d.get('max_input_channels', 0) > 0 and 'usb' in d.get('name','').lower():
+                if d.get('max_input_channels', 0) > 0 and "usb" in d.get('name','').lower():
                     return i
-        except Exception:
+        except:
             pass
-        # Fallback: brug default input
         return sd.default.device[0]
-    
+
     def setupDevice(self, device):
-    # Behold eksisterende output-device (sæt ikke None)
         cur = sd.default.device
         current_out = cur[1] if isinstance(cur, (list, tuple)) else None
-        sd.default.device = (device, current_out)  # <-- denne linje er fixet
+        sd.default.device = (device, current_out)
 
-        info = sd.query_devices(device, 'input')
-        native_fs = float(info['default_samplerate'])
-        print(f"[Device] name={info['name']}, default_samplerate={native_fs} Hz")
+        info = sd.query_devices(device, "input")
+        native_fs = float(info["default_samplerate"])
+        print(f"[Device] name={info['name']}, default samplerate={native_fs} Hz")
         return native_fs
-        
-    def record_audio(self, device=None):
-        # Find og sæt device
+
+    def stream_blocks(self, blocksize):
         device = self.searchForDevices()
         native_fs = self.setupDevice(device)
 
-        # Vælg strategi:
-        USE_TELEPHONY_FS = True  # True = A (8 kHz), False = B (native fs)
-
-        if USE_TELEPHONY_FS:
-            target_fs = 8000.0
-            # Prøv at tjekke om device kan køre target_fs
-            try:
-                sd.check_input_settings(device=device, samplerate=target_fs, channels=1, dtype='float32')
-                self.fs = int(target_fs)
-                print(f"[FS] Using telephony fs={self.fs} Hz")
-                rec_fs = self.fs
-            except Exception as e:
-                # fallback: optag i native og resampl bagefter
-                self.fs = int(target_fs)  # behold “behandlings-fs” som 8 kHz
-                rec_fs = int(native_fs)
-                print(f"[FS] Device cannot do {target_fs} Hz directly; recording at {rec_fs} Hz and resampling to {self.fs} Hz. ({e})")
-        else:
-            # Brug native hele vejen
-            self.fs = int(native_fs)
+        # Try to run the microphone directly at 8 kHz
+        use_resample = False
+        try:
+            sd.check_input_settings(device=device, samplerate=self.fs, channels=1)
             rec_fs = self.fs
-            print(f"[FS] Using device native fs={self.fs} Hz")
+            print(f"[FS] Using telephony fs={self.fs} Hz")
+        except Exception:
+            # Device can't do 8 kHz → use native + resample
+            rec_fs = int(native_fs)
+            use_resample = True
+            print(f"[FS] Device cannot run at {self.fs} Hz, using {rec_fs} Hz and resampling.")
 
-        # Optag med rec_fs (den reelt brugte samplerate)
-        print(f"Recording from device {device} for {self.duration} s at {rec_fs} Hz...")
-        sd.default.samplerate = rec_fs
-        self.audio = sd.rec(int(self.duration * rec_fs),
-                            samplerate=rec_fs, channels=1, dtype='float32')
-        sd.wait()
+        # Open the input stream
+        with sd.InputStream(
+            device=device,
+            channels=1,
+            samplerate=rec_fs,
+            blocksize=blocksize,
+            dtype="float32"
+        ) as stream:
 
-        # niveau-diagnostik
-        a = self.audio.squeeze().astype(float)
-        peak = float(np.max(np.abs(a)))
-        rms  = float(np.sqrt(np.mean(a*a)))
-        print(f"[Audio] peak={peak:.6f}, rms={rms:.6f}")
-        print("Recording complete.")
+            buffer = np.zeros(0, dtype=np.float32)
 
-        # Resampl hvis nødvendigt
-        a = self.audio.flatten().astype(np.float32)
-        if rec_fs != self.fs:
-            from scipy.signal import resample_poly
-            g = np.gcd(int(rec_fs), int(self.fs))
-            up, down = self.fs // g, int(rec_fs) // g
-            print(f"[Resample] {rec_fs} Hz -> {self.fs} Hz (up={up}, down={down})")
-            a = resample_poly(a, up, down).astype(np.float32)
-        self.audio = a
-        
-        # Plot original audio
-        print("Plotting recorded audio signal...")
-        audioDB = Plotting.convert_linear_to_db(self.audio)
-        Plotting.plot_start_signal_db(audioDB, self.fs,)
-        
-        return self.audio
-    
-    def save_audio(self):
-        import numpy as np
-        from scipy.io import wavfile
-        if self.audio is None:
-            raise RuntimeError("Call record_audio() first.")
-        a = self.audio.squeeze().astype('float32')
-        peak = float(np.max(np.abs(a))) or 1.0
-        a = a / peak   # KUN for at kunne høre den ved afspilning
-        wavfile.write(self.output, self.fs, (a*32767).astype(np.int16))
-        print(f"Audio saved to {self.output} (normalized)")
+            print("[Audio] Streaming started...")
+
+            while True:
+                block, _ = stream.read(blocksize)
+                block = block.flatten()
+
+                if use_resample:
+                    # Resample block from rec_fs -> self.fs
+                    from scipy.signal import resample_poly
+                    g = np.gcd(rec_fs, self.fs)
+                    up = self.fs // g
+                    down = rec_fs // g
+                    block = resample_poly(block, up, down).astype(np.float32)
+
+                # If the resampling made the block the wrong size, fix it
+                if len(block) > blocksize:
+                    block = block[:blocksize]
+                elif len(block) < blocksize:
+                    pad = np.zeros(blocksize - len(block), dtype=np.float32)
+                    block = np.concatenate((block, pad))
+                    
+                yield block

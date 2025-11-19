@@ -6,6 +6,7 @@ from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
+from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 
@@ -37,11 +38,10 @@ def runRobotWithRoutePlanner(command: str):
 
 def readCommand():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--duration", type=float, default=10.0)
     ap.add_argument("--fs", type=int, default=8000)
     ap.add_argument("--out", type=str, default="output.wav")
     ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.5)
+    ap.add_argument("--hop_ms", type=float, default=7.5)
     args = ap.parse_args()
 
     detector = DTMFDetector(
@@ -53,13 +53,17 @@ def readCommand():
         twist_pos_db=+4, twist_neg_db=-8
     )
 
-    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    
+    # NEW: we don't record duration anymore, we stream
+    sampler = AudioSampler(fs=args.fs)
 
-    digits = detector.record_and_detect(args.duration, args.out, stabilizer=stab)
-    print("\n--- Detected digits ---")
-    print(digits if digits else "(none)")
+    print("Listening for DTMF command (*# + 5 digits)...")
+    cmd = detector.stream_and_detect(stabilizer, sampler)
 
-    return digits # Return the detected command string (DTMF toner 1234 giver en string "1234")
+    print("\n--- Detected command ---")
+    print(cmd)
+    return cmd
 
 # Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
 def convertCommand(command: str) -> str:
@@ -81,6 +85,7 @@ def readUntilDetected():
         command = readCommand()
         if len(command) == 7:
             commandRead = True
+            return command
         else:
             print("Ugyldig kommando modtaget. Prøv igen.")
 
@@ -103,7 +108,8 @@ if __name__ == "__main__":
     while running:
         command = readUntilDetected()  # Read command until a valid one is detected
     
-        is_valid = isValidCommand(command, Protocol()) # Check if command is valid - Checksum validation
+        proto = Protocol()
+        is_valid = isValidCommand(command, proto) # Check if command is valid - Checksum validation
     
         if is_valid:
             print("Command is valid. Executing route planner...")
