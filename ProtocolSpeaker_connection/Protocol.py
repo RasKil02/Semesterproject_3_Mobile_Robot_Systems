@@ -26,7 +26,7 @@ class Protocol:
             while True:
                 # Indtast og valider room og supply adresser
                 self.roomAddress = input("Enter room address: ")
-                if (self.roomAddress <= 7 or self.roomAddress >= 0):
+                if (0 <= int(self.roomAddress) <= 7):
                     break
                 else:
                     print("Room address must be between 0 and 7. Try again: ")
@@ -34,7 +34,7 @@ class Protocol:
             while True:
                 self.supplyAdress = input("Enter supply address: ")
 
-                if (self.supplyAdress <= 2 or self.supplyAdress >= 1):
+                if (1 <= int(self.supplyAdress) <= 2):
                     break
                 else:
                     print("Supply address must be 1 or 2. Try again: ")
@@ -121,7 +121,7 @@ class Protocol:
 
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
-    def play_DTMF_command(self, command, duration=0.5, fs=8000):
+    def play_DTMF_command(self, command, duration=0.50, fs=8000):
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print(dtmf_sequence)
         signal = np.array(dtmf_sequence)
@@ -130,6 +130,7 @@ class Protocol:
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
                 sd.wait(1)
+                time.sleep(0.3)
 
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):
