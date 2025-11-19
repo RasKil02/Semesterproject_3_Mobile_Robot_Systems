@@ -28,27 +28,36 @@ proto = Protocol()
 #route = RoutePlanner()
 
 def readCommandDuration(duration):
-    # Du kan fjerne argparse, hvis du ikke længere vil bruge kommandolinjeargumenter
-    fs = 8000
-    out = "output.wav"
-    block_ms = 30.0
-    hop_ms = 7.5
+    import argparse
 
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fs", type=int, default=44100)
+    ap.add_argument("--block_ms", type=float, default=30.0)
+    ap.add_argument("--hop_ms",   type=float, default=7.5)
+    args = ap.parse_args()
+
+    # --- Create detector ---
     detector = DTMFDetector(
-        fs=fs,
-        block_ms=block_ms,
-        hop_ms=hop_ms,
+        fs=args.fs,
+        block_ms=args.block_ms,
+        hop_ms=args.hop_ms,
         lowcut=620, highcut=1700, bp_order=4,
         min_db=-20, sep_db=5, dom_db=4, snr_db=8,
         twist_pos_db=+4, twist_neg_db=-8
     )
 
-    stab = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    # --- Stabilizer ---
+    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
 
-    digits = detector.record_and_detect(duration, out, stabilizer=stab)
-    print("\n--- Detected digits ---")
-    print(digits if digits else "(none)")
-    return digits # Return the detected command string (DTMF toner 1234 giver en string "1234")
+    # --- Audio sampler (streaming) ---
+    sampler = AudioSampler(fs=args.fs)
+
+    print(f"Listening for DTMF command for max {duration} seconds (*#, then 5 digits)...")
+    cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
+
+    print("\n--- Detected command ---")
+    print(cmd if cmd else "(none)")
+    return cmd
 
 def readCommand():
     ap = argparse.ArgumentParser()
@@ -126,7 +135,7 @@ def main():
         print("Remainder after CRC:", remainder)
         print("Is CRC valid?", is_valid)
 
-        is_valid = False  # For testing NACK functionality
+        #is_valid = False  # For testing NACK functionality
 
         if not is_valid:
             print("Checksum invalid, sending NACK DTMF tone back to host computer.")
@@ -135,7 +144,7 @@ def main():
             
             while True:
                 time.sleep (5)  # Wait for computer to be ready
-                proto.play_DTMF_command(nack_command)
+                proto.play_DTMF_command(nack_command, duration=3)
                 command = readCommandDuration(10)  # Wait for new command with timeout
 
                 if command is not None:
