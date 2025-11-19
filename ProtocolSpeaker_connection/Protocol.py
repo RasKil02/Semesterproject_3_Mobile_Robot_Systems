@@ -21,8 +21,23 @@ class Protocol:
         self.supplyAdress = address
 
     def set_command(self):
-        self.roomAddress = input("Enter room address: ")
-        self.supplyAdress = input("Enter supply address: ")
+        while True:
+            while True:
+                # Indtast og valider room og supply adresser
+                self.roomAddress = input("Enter room address: ")
+                if (self.roomAddress <= 7 or self.roomAddress >= 0):
+                    break
+                else:
+                    print("Room address must be between 0 and 7. Try again: ")
+
+            while True:
+                self.supplyAdress = input("Enter supply address: ")
+
+                if (self.supplyAdress <= 2 or self.supplyAdress >= 1):
+                    break
+                else:
+                    print("Supply address must be 1 or 2. Try again: ")
+            break
 
         # Konverter hver del separat
         room_dtmf = self.translateNumberToDTMFNumbers(self.roomAddress)
@@ -203,11 +218,3 @@ class Protocol:
         count_ones = bits.count('1')
         # Paritet: 0 hvis lige antal 1'ere, 1 hvis ulige antal 1'ere
         return '0' if count_ones % 2 == 0 else '1'
-
-    def read_with_timeout(timeout=10):
-        start = time.time()
-        while time.time() - start < timeout:
-            cmd = readCommand()
-            if cmd:  # Hvis der modtages noget
-                return cmd
-        return None  # Timeout

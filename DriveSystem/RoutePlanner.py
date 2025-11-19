@@ -52,7 +52,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Reads first 6 bits to determine destination
     def destDecision(self, command: str) -> int:
         # first 6 bits determine destination
-        table = {"000000": 1, "000001": 2, "000010": 3, "000011": 4}
+        table = {"000000": 0, "000001": 1, "000010": 2, "000011": 3}
         dest_bits = command[:6]
         return table.get(dest_bits, 0)
     

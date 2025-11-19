@@ -20,7 +20,7 @@ from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 import time
 import argparse
-import serial
+#import serial
 
 
 proto = Protocol()
@@ -100,7 +100,36 @@ def main():
         print("Checksum invalid, sending NACK DTMF tone back to host computer.")
         # Send NACK DTMF tone back to host computer
         nack_command = "A"  # Assuming '9' represents NACK
-        proto.play_DTMF_command(nack_command)
+        
+        while True:
+            proto.play_DTMF_command(nack_command)
+            command = readCommandDuration(10)  # Wait for new command with timeout
+
+            if command is not None:
+                print("Received command after NACK: " + command)
+                command = command[2:7]  # Fjern de første 2 toner for at lave convertCommand med de næste 4 toner
+                print("Command for checksum: " + command)
+
+                received_bitstring = proto.decimal_string_to_3bit_binary_string(command)
+                print("Converted command to bits:", received_bitstring)
+                remainder, is_valid = proto.Check_CRC(received_bitstring)
+                print("Remainder after CRC:", remainder)
+                print("Is CRC valid?", is_valid)
+
+                if is_valid:
+                    print("Checksum valid, proceeding with route planning.")
+                    runRobotWithRoutePlanner(received_bitstring)
+                    break
+                else:
+                    print("Checksum still invalid, waiting for new command.")
+
+                if command is None:
+                    print("Timeout reached, no command received.")
+
+
+    roomadress = command[2:4]
+    roomadress = int(roomadress)
+    print("Room address: " + str(roomadress))
 
 
     #supplyroom = command[4:6]
@@ -111,51 +140,10 @@ def main():
 
     #route.send_data(supplyroom)
 
+    
 
-""""
-def main():
-    while True:
-        command = readCommand()
-        print("Received command: " + command)
 
-        checksumDigit = command[6]
-        payload = command[2:7]  # De fire datatoner
-        print("Command for checksum: " + payload)
 
-        print("Checksum DTMF tone: " + checksumDigit)
-
-        received_bitstring = proto.decimal_string_to_3bit_binary_string(payload)
-        print("Converted command to bits:", received_bitstring)
-
-        remainder, is_valid = proto.Check_CRC(received_bitstring)
-        print("Remainder after CRC:", remainder)
-        print("Is CRC valid?", is_valid)
-
-        if not is_valid:
-            print("Checksum invalid → sending NACK...")
-            proto.play_DTMF_command("A")  # Send NACK
-
-            # Vent op til 10 sekunder på en ny kommando
-            print("Waiting 10 seconds for retransmission...")
-
-            new_cmd = read_with_timeout(10)
-
-            if new_cmd is None:
-                print("No command received → sending NACK again")
-                proto.play_DTMF_command("A")
-                continue  # Gå tilbage og vent igen
-
-            # Hvis der faktisk kom noget:
-            command = new_cmd
-            print("Received retransmitted command: " + command)
-            continue  # Verificér den nye kommando
-
-        # -----------------
-        # Hvis CRC er VALID:
-        # -----------------
-        print("CRC valid! Proceeding with command...")
-        break   # Eller fortsæt med din normale logik
-"""""
 
 
 
