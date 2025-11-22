@@ -130,7 +130,7 @@ class Protocol:
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
                 sd.wait(1)
-                time.sleep(0.5)
+                time.sleep(0.3)
 
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):
@@ -222,6 +222,28 @@ class Protocol:
         first_3bit = bits_6[:3]
         second_3bit = bits_6[3:]
         return first_3bit, second_3bit
+    
+    def decode_and_check_crc(self, cmd_with_startbits):
+        # Udpak checksum
+        checksum_digit = cmd_with_startbits[6]
+
+        # Fjern *# og checksum → behold de 5 vigtige cifre
+        command = cmd_with_startbits[2:7]
+
+        print("Command for checksum:", command)
+        print("Checksum DTMF tone:", checksum_digit)
+
+        # Konverter til 3-bit binær streng
+        bitstring = self.decimal_string_to_3bit_binary_string(command)
+        print("Converted command to bits:", bitstring)
+
+        # CRC check
+        remainder, is_valid = self.Check_CRC(bitstring)
+        print("Remainder after CRC:", remainder)
+        print("Is CRC valid?", is_valid)
+
+        # Returnér så du kan bruge det direkte i main
+        return command, bitstring, is_valid, remainder, checksum_digit
 
 
 

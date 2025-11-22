@@ -3,6 +3,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
+from machine import Pin
 #import serial
 import time
 
@@ -73,13 +74,18 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.publish_vw_for_duration(0.0, angular_speed, duration)
         self.stop(0.3)
 
-
     def dropSupply(self, supplies: int):
-        if supplies <= 0:
-            self.get_logger().info('No supplies to drop')
+        if supplies < 0 or supplies > 3:
+            self.get_logger().info('Invalid supply number')
             return
-        for i in range(1, supplies + 1):
-            self.get_logger().info(f'Dropping {i} supply' if i == 1 else f'Dropping {i} supplies')
+        
+        print(f"Dropping supply {supplies}")
+        
+        pin = Pin(supplies, Pin.OUT)
+        pin.value = 1
+        time.sleep(5)
+        pin.value = 0
+
 
     # Executes the full route: drive out, rotate, drop supplies, return home
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
@@ -89,7 +95,11 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.rotate(angular_speed, 2.0)
         # drop
         time.sleep(2.0)
+
+        # her skal der skrives noget kode i forhold til at styre drop mekanismen
         self.dropSupply(supplies)
+        time.sleep(2.0)
+
         # return with same |speed| and same duration
         self.ReturnHome(speed, duration)
 

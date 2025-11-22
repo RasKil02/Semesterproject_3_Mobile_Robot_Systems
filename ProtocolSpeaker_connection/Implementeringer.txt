@@ -88,3 +88,4 @@ ting der måske skal laves:
 enheds-ID for højtaler.
 sekvensnummer
 collisions detection
+Måske gøre så man kan droppe flere end 1 supply ad gangen.
