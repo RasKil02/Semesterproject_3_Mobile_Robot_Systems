@@ -54,12 +54,12 @@ def readCommand():
 def listener_thread():
     while True:
         cmd = readCommand()
-        print("Received NACK:", cmd)
 
         if cmd:
 
             nack_event.set()  # Signalér til main at NACK blev modtaget
             # Hvis robotten sender NACK → send kommando igen
+            time.sleep(2) 
             proto.play_dtmf_command_checksum(proto.command)
 
 
@@ -74,8 +74,8 @@ def main():
         time.sleep(10)
 
         if nack_event.is_set():
-            print("NACK received → extending wait by 10 seconds to send command again.")
-            time.sleep(10)
+            print("NACK received → extending wait by 2 seconds to send command again.")
+            time.sleep(2)
             nack_event.clear()  # Reset event for next iteration
         # Code should be insertet that again time.sleep
 
@@ -85,5 +85,6 @@ def main():
 
 if __name__ == "__main__":
     t1.start()
+    time.sleep(1) 
     main()
 

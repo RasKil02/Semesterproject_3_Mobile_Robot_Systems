@@ -118,6 +118,7 @@ class Protocol:
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
     def play_DTMF_command(self, command, duration=0.50, fs=8000):
+
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print(dtmf_sequence)
         signal = np.array(dtmf_sequence)
@@ -201,8 +202,11 @@ class Protocol:
             raise ValueError("Input must be a 3-bit binary string.")
         return str(int(bits, 2))
 
-    def play_dtmf_command_checksum(self):
-        command = self.set_command()
+    def play_dtmf_command_checksum(self, command=None):
+        
+        if command is None:
+            command = self.set_command()
+    
         checksumString = self.calculate_crc_remainder(self.convertCommand(command))
         print("Checksum CRC:", checksumString)
         checkSumDTMF = self.convert3bitToString(checksumString)

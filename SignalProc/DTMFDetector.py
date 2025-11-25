@@ -265,16 +265,11 @@ class DTMFDetector:
             if len(digits) == 7:
                 return "".join(digits)
             
-
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
-    
         digits = []
-        start_stage = 0       # 0 = waiting for '*', 1 = waiting for '#'
-        collecting_payload = False
-
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
-        max_time_ms = duration * 1000.0  # Konverter duration til millisekunder
+        max_time_ms = duration * 1000.0  # Varighed i ms
 
         for block in sampler.stream_blocks(self.block):
             if t_ms > max_time_ms:
@@ -284,41 +279,12 @@ class DTMFDetector:
             out = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
-            if not out:
-                continue
+            if out:
+                digits.append(out)
+                print(f"Detected digits so far: {''.join(digits)}")
 
-            if not collecting_payload:
+        return "".join(digits)
 
-                if start_stage == 0:
-                    # Expecting first start bit '*'
-                    if out == "*":
-                        digits.append(out)
-                        start_stage = 1
-                        print("Start symbol '*' detected, waiting for '#'...")
-                    # ignore everything else
-                    continue
-
-                elif start_stage == 1:
-                    # Expecting second start bit '#'
-                    if out == "#":
-                        digits.append(out)
-                        collecting_payload = True
-                        print("Second symbol '#' detected, collecting payload digits...")
-                    else:
-                        # WRONG second symbol → reset to stage 0
-                        print(f"Expected '#', but got '{out}'. Resetting to wait for '*'.")
-                        digits.clear()
-                        start_stage = 0
-                    continue
-                
-            digits.append(out)
-            
-            print(f"Detected digits so far: {''.join(digits)}")
-
-            if len(digits) == 7:
-                return "".join(digits)
-        
-        return "".join(digits)  # Return hvad der er samlet, hvis timeout eller for tidligt stop
 
 
 

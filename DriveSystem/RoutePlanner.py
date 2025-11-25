@@ -3,7 +3,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
-from machine import Pin
+#from machine import Pin
 #import serial
 import time
 
