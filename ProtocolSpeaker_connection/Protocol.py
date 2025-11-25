@@ -10,10 +10,6 @@ class Protocol:
         self.start = '*'
         self.stop = '#'
         self.command = None
- 
-    def print_command(self):
-        print(self.roomAddress)
-        print(self.supplyAdress)
     
     def set_room_address(self, address):
         self.roomAddress = address

@@ -7,6 +7,9 @@ def supplyMotor(supplyID: int, duty: int = int(0.4 * 1023), duration: float = 2.
     duty: PWM duty cycle (0–1023 on ESP8266 / 0–65535 on RP2040)
     duration: how long the motor runs (seconds)
     """
+    if supplyID < 0 or supplyID > 3:
+        print('Invalid supply number')
+        return
 
     # Initialize PWM on the selected pin
     pwm = PWM(Pin(supplyID))
@@ -30,6 +33,8 @@ def main():
             data = uart.read().decode()
             print("Received:", data)
         supplyMotor(data)
+
+
 
 
 if __name__ == "__main__":
