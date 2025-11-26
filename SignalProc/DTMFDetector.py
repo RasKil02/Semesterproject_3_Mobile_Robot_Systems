@@ -33,7 +33,7 @@ class DigitStabilizer:
       - gap_ms : krævet stilhed før næste symbol (hindrer dobbeltskud)
     Tilstande: IDLE -> CANDIDATE -> LOCKED -> GAP
     """
-    def __init__(self, hold_ms=30, miss_ms=20, gap_ms=55):
+    def __init__(self, hold_ms=25, miss_ms=20, gap_ms=78):
         self.hold_ms = float(hold_ms)
         self.miss_ms = float(miss_ms)
         self.gap_ms  = float(gap_ms)
@@ -133,9 +133,9 @@ class DigitStabilizer:
 class DTMFDetector:
     def __init__(self,
                  # Audio input
-                 fs: int,
-                 block_ms: float = 30.0,
-                 hop_ms: float   = 7.5,
+                 fs: int = 44100,
+                 block_ms: float = 40.0,
+                 hop_ms: float   = 10.0,
                  lowcut: float   = 620.0,
                  highcut: float  = 1700.0,
                  bp_order: int   = 4,
@@ -144,9 +144,9 @@ class DTMFDetector:
                  sep_db: float = 5.0,       # separations-tærskel
                  dom_db: float = 4.0,       # dominans-tærskel
                  snr_db: float = 8.0,       # SNR-tærskel
-                 twist_pos_db: float = +30.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -30.0):  # negativ twist grænse (col > row)
-        
+                 twist_pos_db: float = +40.0,   # positiv twist grænse (row > col)
+                 twist_neg_db: float = -40.0):  # negativ twist grænse (col > row)
+
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
         self.hop   = max(1, int(self.fs * (hop_ms/1000.0))) # 60 samples ved 7.5 ms @ 8kHz
