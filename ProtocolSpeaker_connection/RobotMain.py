@@ -15,7 +15,7 @@ import sounddevice as sd
 from Protocol import Protocol
 import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
-#from DriveSystem.RoutePlanner import RoutePlanner
+from DriveSystem.RoutePlanner import RoutePlanner
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 from SignalProc.AudioSampling import AudioSampler
@@ -27,7 +27,7 @@ import threading
 
 proto = Protocol()
 newCommandEvent = threading.Event()
-#route = RoutePlanner()
+route = RoutePlanner()
 
 def readCommandDuration(duration):
     import argparse
@@ -174,7 +174,7 @@ def main():
         bitstring = bitstring[0:12] 
 
         print("Checksum valid → executing route planner with bitstring: " + bitstring) 
-        #runRobotWithRoutePlanner(bitstring)
+        runRobotWithRoutePlanner(bitstring)
 
     # Exit loop with keyboard interrupt
         try:

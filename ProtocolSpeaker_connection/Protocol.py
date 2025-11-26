@@ -107,7 +107,7 @@ class Protocol:
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
     def play_DTMF_command(self, command, duration=0.50, fs=8000):
-gi
+
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print(dtmf_sequence)
         signal = np.array(dtmf_sequence)
