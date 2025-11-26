@@ -24,10 +24,8 @@ import argparse
 import threading
 #import serial
 
-
 proto = Protocol()
 newCommandEvent = threading.Event()
-route = RoutePlanner()
 
 def readCommandDuration(duration):
     import argparse
