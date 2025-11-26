@@ -134,8 +134,8 @@ class DTMFDetector:
     def __init__(self,
                  # Audio input
                  fs: int,
-                 block_ms: float = 30.0,
-                 hop_ms: float   = 7.5,
+                 block_ms: float = 20.0,
+                 hop_ms: float   = 5.0,
                  lowcut: float   = 620.0,
                  highcut: float  = 1700.0,
                  bp_order: int   = 4,
