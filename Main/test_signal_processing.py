@@ -8,7 +8,7 @@ def readCommand():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fs", type=int, default=44100)
     ap.add_argument("--block_ms", type=float, default=40.0)
-    ap.add_argument("--hop_ms",   type=float, default=10.0)
+    ap.add_argument("--hop_ms",   type=float, default=7.0)
     args = ap.parse_args()
 
     # --- Create detector ---
@@ -18,7 +18,7 @@ def readCommand():
         hop_ms=args.hop_ms,
         lowcut=620, highcut=1700, bp_order=4,
         min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+50, twist_neg_db=-50
+        twist_pos_db=+40, twist_neg_db=-40
     )
 
     # --- Stabilizer ---
