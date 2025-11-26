@@ -54,3 +54,6 @@
 12.14 Enter virtual envoiroment (venv): source venv/bin/activate
 12.15 Type: PYTHONPATH="$PWD:$PYTHONPATH" python3 -m Main.main
 12.15 Program should run!
+
+13. Exiting virtual envoiroment (venv)
+13.1 Type: deactivate
