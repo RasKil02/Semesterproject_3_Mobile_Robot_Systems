@@ -15,7 +15,7 @@ import sounddevice as sd
 from Protocol import Protocol
 import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
-from DriveSystem.RoutePlanner import RoutePlanner
+#from DriveSystem.RoutePlanner import RoutePlanner
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 from SignalProc.AudioSampling import AudioSampler
@@ -91,21 +91,6 @@ def readCommand():
     print(cmd if cmd else "(none)")
     return cmd
 
-
-# Converts digit into 3 bit binary number, pairs of digits to 6 bit binary numbers
-def convertCommand(command: str) -> str:
-    if len(command) % 2:
-        raise ValueError("Længden skal være lige (par af cifre).")
-
-    parts = []
-    for i in range(0, len(command), 2):
-        a, b = command[i], command[i + 1]
-        if a not in "01234567" or b not in "01234567":
-            raise ValueError("Kun 0-7 er tilladt.")
-        parts.append(f'{format(int(a), "03b")}{format(int(b), "03b")}')
-    return "".join(parts) # Laver en 12 bit samlet streng af 6 bit par
-
-
 def runRobotWithRoutePlanner(command: str):
     rclpy.init()
     node = RoutePlanner()
@@ -143,40 +128,53 @@ def main():
         print("Received command:", command)
 
         # Dekod og check CRC
-        cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
-            proto.decode_and_check_crc(command)
+        try:
+            cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
+                proto.decode_and_check_crc(command)
+        except ValueError:
+            print("Error decoding command for checksu. One bit was not a number\n" )
+            is_valid = False
 
         # Hvis checksum ikke er valid → send NACK
         while not is_valid:
+            time.sleep(5) # Giver tid til at computer sender kommando færdig.
             print("Checksum invalid → sending NACK")
 
             nack_command = "A"
             proto.play_DTMF_command(nack_command, duration=0.5)
 
-            # Vent op til 5 sek. på en ny kommando
-            received = newCommandEvent.wait(timeout=5)
 
-            if not received:
+            # Vent op til 10 sek. på en ny kommando
+            RestransmittedCommand = readCommandDuration(10)
+
+            if not RestransmittedCommand:
                 print("Timeout → No command received → sending NACK again")
                 continue
 
             # Ny kommando modtaget
-            newCommandEvent.clear()
-            print("New command received:", command)
+            if RestransmittedCommand is not None:
+                print("New command received:", RestransmittedCommand)
 
             # Tjek den nye kommando
-            cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
-                proto.decode_and_check_crc(command)
+                try:
+                    cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
+                        proto.decode_and_check_crc(RestransmittedCommand)
+                    
+                except ValueError:
+                    print("Error decoding command for checksu. One bit was not a number\n" )
+                    is_valid = False
             
             if (is_valid):
                 print("Checksum valid efter NACK → fortsætter")
                 break
             else:
                 continue
+                
+        # Konverter til bitstring som RoutePlanner tager som input
+        bitstring = bitstring[0:12] 
 
-        # Når CRC endelig er valid:
-        print("Checksum valid → executing route planner")
-        runRobotWithRoutePlanner(bitstring)
+        print("Checksum valid → executing route planner with bitstring: " + bitstring) 
+        #runRobotWithRoutePlanner(bitstring)
 
     # Exit loop with keyboard interrupt
         try:

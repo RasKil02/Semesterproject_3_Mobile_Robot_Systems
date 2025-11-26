@@ -9,14 +9,9 @@ class Protocol:
         self.supplyAdress = None
         self.start = '*'
         self.stop = '#'
-        self.command = None
-    
-    def set_room_address(self, address):
-        self.roomAddress = address
+        self.command = None # Command to be saved for resending
 
-    def set_supply_address(self, address):
-        self.supplyAdress = address
-
+    # Set command by asking user for room and supply addresses. That number is converted to DTMF number format fx 1 -> 01
     def set_command(self):
         while True:
             while True:
@@ -36,59 +31,16 @@ class Protocol:
                     print("Supply address must be 1 or 2. Try again: ")
             break
 
-        # Konverter hver del separat
+        """
+        Laver en kommando, hvor hvert input-tal bliver til to cifre:
+        1 -> 01, 6 -> 06, 66 -> 66, 4 -> 04
+        """
         room_dtmf = self.translateNumberToDTMFNumbers(self.roomAddress)
         supply_dtmf = self.translateNumberToDTMFNumbers(self.supplyAdress)
 
         # Saml til én samlet kommando
         self.command = f"{room_dtmf}{supply_dtmf}"
         return self.command
-
-    def set_startcommand(self):
-        startbit = '*'
-        startbit2 = '#'
-        self.startCommand = f"{startbit}{startbit2}"
-        return self.startCommand
-
-
-
-    # Translate a single number to its corresponding DTMF frequencies
-    def translateNumberToDTMFfreq(self, number):
-        dtmf_freqs = {
-            '1': (697, 1209),
-            '2': (697, 1336),
-            '3': (697, 1477),
-            'A': (697, 1633),
-            '4': (770, 1209),
-            '5': (770, 1336),
-            '6': (770, 1477),
-            'B': (770, 1633),
-            '7': (852, 1209),
-            '8': (852, 1336),
-            '9': (852, 1477),
-            'C': (852, 1633),
-            '*': (941, 1209),
-            '0': (941, 1336),
-            '#': (941, 1477),
-            'D': (941, 1633)
-        }
-        return dtmf_freqs.get(number, (None, None))
-
-    # Translate a full command string to a list of DTMF frequency pairs
-    def translateCommandToDTMFfreq(self, command):
-        dtmf_sequence = []
-        for char in command:
-            freqs = self.translateNumberToDTMFfreq(char)
-            if freqs != (None, None):
-                dtmf_sequence.append(freqs)
-        return dtmf_sequence
-    
-    # Print the DTMF frequencies for the current command
-    def print_DTMF_command(self):
-        command = f"{self.start}{self.roomAddress}{self.supplyAdress}{self.stop}"
-        dtmf_sequence = self.translateCommandToDTMFfreq(command)
-        for freqs in dtmf_sequence:
-            print(f"DTMF Frequencies: {freqs[0]} Hz, {freqs[1]} Hz")
     
     def translateNumberToDTMFNumbers(self, command: str) -> str:
         """
@@ -115,8 +67,46 @@ class Protocol:
 
         return result
 
+    # Set start bits * og # to use by playDTMFcommand
+    def set_startcommand(self):
+        startbit = '*'
+        startbit2 = '#'
+        self.startCommand = f"{startbit}{startbit2}"
+        return self.startCommand
+
+    # Translate a single number to its corresponding DTMF frequencies
+    def translateNumberToDTMFfreq(self, number):
+        dtmf_freqs = {
+            '1': (697, 1209),
+            '2': (697, 1336),
+            '3': (697, 1477),
+            'A': (697, 1633),
+            '4': (770, 1209),
+            '5': (770, 1336),
+            '6': (770, 1477),
+            'B': (770, 1633),
+            '7': (852, 1209),
+            '8': (852, 1336),
+            '9': (852, 1477),
+            'C': (852, 1633),
+            '*': (941, 1209),
+            '0': (941, 1336),
+            '#': (941, 1477),
+            'D': (941, 1633)
+        }
+        return dtmf_freqs.get(number, (None, None))
+
+    # Translate a full command string to list of DTMF frequency pair.
+    def translateCommandToDTMFfreq(self, command):
+        dtmf_sequence = []
+        for char in command:
+            freqs = self.translateNumberToDTMFfreq(char)
+            if freqs != (None, None):
+                dtmf_sequence.append(freqs)
+        return dtmf_sequence
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
+    # Command is a string of DTMF characters.
     def play_DTMF_command(self, command, duration=0.50, fs=8000):
 
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
@@ -129,6 +119,34 @@ class Protocol:
                 sd.wait(1)
                 time.sleep(0.3)
 
+    # generate command with set_command. Runs checksum and gets Checksum Remainder.
+    def play_dtmf_command_checksum(self, command=None):    
+        if command is None:
+            command = self.set_command()
+    
+        checksumString = self.calculate_crc_remainder(self.convert4BitCommandTo12BitString(command))
+        print("Checksum CRC:", checksumString)
+
+        # Konvertere 3 bit checksum til string, da play_DTMF_command tager en string som input
+        checkSumDTMF = self.convert3bitToString(checksumString) 
+        print("Checksum DTMF:", checkSumDTMF)
+
+        startCommand = self.set_startcommand()  # Kald funktionen korrekt
+        self.play_DTMF_command(startCommand + command + checkSumDTMF)
+
+
+    # Converts a decimal string to a 3-bit binary string for each digit. Eksempel 01 -> 000001
+    def decimal_string_to_3bit_binary_string(self, decimal_string: str) -> str:
+        result = ''
+        for c in decimal_string:
+            num = int(c)
+            if not 0 <= num <= 7:
+                raise ValueError("Alle cifre skal være mellem 0 og 7 for 3-bit konvertering.")
+            result += format(num, '03b')
+        return result
+    
+    # Claculates the CRC remainder for a given a command bit string of 12 bits
+    # Used on the host computer to generate the checksum digit to send to the robot.
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):
         """Calculate the CRC remainder of a string of bits using the given polynomial."""
@@ -159,6 +177,8 @@ class Protocol:
         remainder = ''.join(input_padded[-(polynomial_length - 1):])
         return remainder
     
+    # Calculates a new CRC Check for a command bit string on 12 bits and a 3 bit CRC string.
+    # Used on the robot to check if the received command is valid. Should give (000) if valid.
     def Check_CRC(self, received_bitstring, poly_bitstring="1011"):
         polynomial = list(poly_bitstring)
         polynomial_length = len(poly_bitstring)
@@ -173,65 +193,35 @@ class Protocol:
         valid = remainder == '0' * (polynomial_length - 1)
         return remainder, valid
 
-
-    
-    def decimal_string_to_3bit_binary_string(self, decimal_string: str) -> str:
-        result = ''
-        for c in decimal_string:
-            num = int(c)
-            if not 0 <= num <= 7:
-                raise ValueError("Alle cifre skal være mellem 0 og 7 for 3-bit konvertering.")
-            result += format(num, '03b')
-        return result
-
-
-    def convertCommand(self, command: str) -> str:
+    # laer 4 bit string om til en 12 bit string. Eks 0001 til 000000000001
+    # Command er her en 4 bit streng fra set_command 
+    def convert4BitCommandTo12BitString(self, command: str) -> str:
         if len(command) % 2:
             raise ValueError("Længden skal være lige (par af cifre).")
 
         parts = []
-        for i in range(0, len(command), 2):
+        for i in range(0, len(command), 2): # Løber i gennem command og deler dem op i par
             a, b = command[i], command[i + 1]
-            if a not in "01234567" or b not in "01234567":
+            if a not in "01234567" or b not in "01234567": # Tjekker om hvert bit er valid
                 raise ValueError("Kun 0-7 er tilladt.")
-            parts.append(f'{format(int(a), "03b")}{format(int(b), "03b")}')
-        return "".join(parts) # Laver en 12 bit samlet streng af 6 bit par
+            
+            parts.append(f'{format(int(a), "03b")}{format(int(b), "03b")}') # Tager et par ad gangen og laver dem om til 3-bit binary
+            # og sætter dem sammen til en 6 bit string
+        return "".join(parts) # Sætter 6 bit strenge om til en 12 bit string.
     
     def convert3bitToString(self, bits: str) -> str:
         if len(bits) != 3 or any(b not in '01' for b in bits):
             raise ValueError("Input must be a 3-bit binary string.")
         return str(int(bits, 2))
-
-    def play_dtmf_command_checksum(self, command=None):
-        
-        if command is None:
-            command = self.set_command()
     
-        checksumString = self.calculate_crc_remainder(self.convertCommand(command))
-        print("Checksum CRC:", checksumString)
-        checkSumDTMF = self.convert3bitToString(checksumString)
-        print("Checksum DTMF:", checkSumDTMF)
-
-        startCommand = self.set_startcommand()  # Kald funktionen korrekt
-        self.play_DTMF_command(startCommand + command + checkSumDTMF)
-
-
-    def split_6bit_to_two_3bit(self, bits_6):
-        if len(bits_6) != 6 or any(b not in '01' for b in bits_6):
-            raise ValueError("Input skal være en 6-bit binærstreng")
-        first_3bit = bits_6[:3]
-        second_3bit = bits_6[3:]
-        return first_3bit, second_3bit
-    
+    # decode string from readcommand and use Check_CRC
     def decode_and_check_crc(self, cmd_with_startbits):
+
         # Udpak checksum
         checksum_digit = cmd_with_startbits[6]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
         command = cmd_with_startbits[2:7]
-
-        print("Command for checksum:", command)
-        print("Checksum DTMF tone:", checksum_digit)
 
         # Konverter til 3-bit binær streng
         bitstring = self.decimal_string_to_3bit_binary_string(command)
@@ -244,10 +234,3 @@ class Protocol:
 
         # Returnér så du kan bruge det direkte i main
         return command, bitstring, is_valid, remainder, checksum_digit
-
-
-
-    def compute_parity(bits: str) -> str:
-        count_ones = bits.count('1')
-        # Paritet: 0 hvis lige antal 1'ere, 1 hvis ulige antal 1'ere
-        return '0' if count_ones % 2 == 0 else '1'
