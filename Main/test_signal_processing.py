@@ -8,7 +8,7 @@ def readCommand():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fs", type=int, default=44100)
     ap.add_argument("--block_ms", type=float, default=40.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.0)
+    ap.add_argument("--hop_ms",   type=float, default=10.0)
     args = ap.parse_args()
 
     # --- Create detector ---
