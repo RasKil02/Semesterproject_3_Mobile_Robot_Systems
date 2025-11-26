@@ -106,7 +106,6 @@ class Protocol:
         return dtmf_sequence
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
-    # Command is a string of DTMF characters.
     def play_DTMF_command(self, command, duration=0.50, fs=8000):
 
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
@@ -117,7 +116,7 @@ class Protocol:
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
                 sd.wait(1)
-                time.sleep(0.3)
+                time.sleep(0.28)
 
     # generate command with set_command. Runs checksum and gets Checksum Remainder.
     def play_dtmf_command_checksum(self, command=None):    

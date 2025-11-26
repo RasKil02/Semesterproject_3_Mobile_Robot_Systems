@@ -54,6 +54,7 @@ def main():
         proto = Protocol()
         proto.play_dtmf_command_checksum()
 
+        """""
         while True:
             print("Waiting for possible NACK response\n")
             NACKCommand = readCommandDuration(10)
@@ -66,6 +67,7 @@ def main():
 
             if (NACKCommand != None):
                 proto.play_dtmf_command_checksum(proto.command)
+        """""
         
         sd.stop()
 
