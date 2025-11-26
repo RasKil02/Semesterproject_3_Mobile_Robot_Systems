@@ -160,13 +160,14 @@ def main():
             proto.play_DTMF_command(nack_command, duration=0.5)
             
             control_queue.put("pause")
+            time.sleep(0.4)  # Giver listener-thread tid til at stoppe
 
             try:
                 sd.stop()
             except:
                 pass
 
-            time.sleep(0.4)  # Giver listener-thread tid til at stoppe
+
             # Vent op til 10 sek. på en ny kommando
             RestransmittedCommand = readCommandDuration(10)
             control_queue.put("resume")
