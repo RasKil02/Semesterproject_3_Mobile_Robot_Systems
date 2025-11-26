@@ -18,7 +18,7 @@ def readCommand():
         hop_ms=args.hop_ms,
         lowcut=620, highcut=1700, bp_order=4,
         min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+4, twist_neg_db=-8
+        twist_pos_db=+30, twist_neg_db=-30
     )
 
     # --- Stabilizer ---
