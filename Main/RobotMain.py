@@ -105,41 +105,9 @@ def runRobotWithRoutePlanner(command: str):
         node.destroy_node()
         rclpy.shutdown()
 
-def listener_thread():
-    global command
-    listening = True
-
-    while True:
-        # Tjek om main har sendt en pause eller resume
-        try:
-            msg = control_queue.get_nowait()
-            if msg == "pause":
-                listening = False
-                continue
-            elif msg == "resume":
-                listening = True
-        except queue.Empty:
-            pass
-
-        # Kun lyt når der er tilladelse
-        if listening:
-            command = readCommand()
-            print("Received:", command)
-            newCommandEvent.set()
-
-        time.sleep(0.05)  # Undgår CPU-spin
-
-
-t1 = threading.Thread(target=listener_thread, daemon=True)
-
 def main():
-    global command
-
     while True:
-
-        # Vent på en ny kommando fra thread
-        newCommandEvent.wait()
-        newCommandEvent.clear()
+        command = readCommand()
 
         print("Received command:", command)
 
@@ -158,19 +126,9 @@ def main():
 
             nack_command = "A"
             proto.play_DTMF_command(nack_command, duration=0.5)
-            
-            control_queue.put("pause")
-            time.sleep(0.4)  # Giver listener-thread tid til at stoppe
-
-            try:
-                sd.stop()
-            except:
-                pass
-
 
             # Vent op til 10 sek. på en ny kommando
             RestransmittedCommand = readCommandDuration(10)
-            control_queue.put("resume")
 
             if not RestransmittedCommand:
                 print("Timeout → No command received → sending NACK again")
