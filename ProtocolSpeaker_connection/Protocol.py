@@ -120,7 +120,7 @@ class Protocol:
 
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
-    def play_DTMF_command(self, command, duration=0.5, fs=8000):
+    def play_DTMF_command(self, command, duration=0.25, fs=8000):
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print(dtmf_sequence)
         signal = np.array(dtmf_sequence)
@@ -128,7 +128,7 @@ class Protocol:
                 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
                 sd.play(tone, fs)
-                sd.wait(1)
+                sd.wait(0.05)
 
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):
