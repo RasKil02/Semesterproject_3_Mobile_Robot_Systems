@@ -271,9 +271,9 @@ class DTMFDetector:
             if len(digits) == 7:
                 # Convert amplitudes to numpy array for plotting
                 amplitudes_arr = np.array(amplitudes, dtype=np.float32)
-                barplot = plotter.barplot_of_DTMFtones(block_symbols)
-                amplitudeplot = plotter.plot_signal_amplitude(amplitudes_arr)
-                plotter.plot_amplitude_and_DTMFtones(barplot, amplitudeplot)
+                #barplot = plotter.barplot_of_DTMFtones(block_symbols)
+                #amplitudeplot = plotter.plot_signal_amplitude(amplitudes_arr)
+                #plotter.plot_amplitude_and_DTMFtones(barplot, amplitudeplot)
                 return "".join(digits)
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
