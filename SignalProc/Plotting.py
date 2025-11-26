@@ -9,122 +9,110 @@ import re
 class Plotting:
     def __init__(self):
         pass
+            
+    def plot_signal_amplitude(self, amplitude_arr, fs=44100):
 
-    @staticmethod
-    def convert_linear_to_db(signal, ref=1.0, amin=1e-20):
-        signal = np.maximum(np.abs(signal), amin)
-        return 20 * np.log10(signal / ref)
+        trim_ms = 2000
+        cut = int((trim_ms / 1000) * fs)
+        amplitude_arr = amplitude_arr[cut:]
 
+        mag = np.abs(amplitude_arr)
 
-    # Plot start signal in dB scale
-    @staticmethod
-    def plot_start_signal_db(signal_db, title="Start Signal in dB"):
-        plt.figure(figsize=(10, 4))
-        plt.plot(signal_db)
-        plt.title(title)
-        plt.xlabel("Sample Index")
-        plt.ylabel("Amplitude (dB)")
-        plt.grid(True)
-        plt.show()
-        
-    @staticmethod
-    def save_block_txt(seg, seg_f, bi, t_ms, lf, hf, E_low, E_high,
-                    l_abs_db, l2_db, h_abs_db, h2_db,   
-                    blk_db, snr_low_db, snr_high_db,
-                    l_dom_db, h_dom_db, twist,
-                    sep_ok, abs_ok, twist_ok, dom_ok, snr_ok,
-                    good, LUT, filename="first_detected_block.txt"):
+        window_size = int(0.05 * fs)
+        envelope = np.convolve(mag, np.ones(window_size)/window_size, mode='valid')
 
-        # Prepare a dictionary with all relevant info
-        block_info = {
-            "Seg (Used for plotting original block signal)": seg,
-            "Seg_f (Used for plotting block signal after bandpass filter and window have been applied)": seg_f,
-            "block_index": bi,
-            "timestamp_ms": t_ms,
-            "lf": lf,
-            "hf": hf,
-            "E_low": E_low,
-            "E_high": E_high,
-            "l_abs_db": l_abs_db,
-            "l2_db": l2_db,
-            "h_abs_db": h_abs_db,
-            "h2_db": h2_db,
-            "blk_db": blk_db,
-            "snr_low_db": snr_low_db,
-            "snr_high_db": snr_high_db,
-            "l_dom_db": l_dom_db,
-            "h_dom_db": h_dom_db,
-            "twist_db": twist,
-            "sep_ok": sep_ok,
-            "abs_ok": abs_ok,
-            "twist_ok": twist_ok,
-            "dom_ok": dom_ok,
-            "snr_ok": snr_ok,
-            "good": good,
-            "symbol_detected": LUT.get((lf, hf), "?")
+        t = np.arange(len(envelope)) / fs
+
+        return {
+            "t": t,
+            "envelope": envelope
         }
 
-        # Save to text file
-        with open(filename, "w") as f:
-            f.write("=== First Detected DTMF Block Info ===\n\n")
-            for key, value in block_info.items():
-                f.write(f"{key}: {value}\n")
+    def barplot_of_DTMFtones(self, block_symbols):
 
-        print(f"[INFO] Saved first detected DTMF block info to '{filename}'")
+        print("Block Symbols:", block_symbols)
 
-    @staticmethod
-    def open_txt_file_return_seg_segf(filename="first_detected_block.txt"):
-        seg = []
-        seg_f = []
-        with open(filename, "r") as f:
-            content = f.read()
+        dtmf_chars = [""] + ["0","1","2","3","4","5","6","7","8","9",
+                            "A","B","C","D","*","#"]
 
-            seg_str = None
-            segf_str = None
+        char_to_y = {ch: i for i, ch in enumerate(dtmf_chars)}
 
-            for line in content.splitlines():
-                line = line.strip()
-                if line.startswith("Seg (Used for plotting original block signal)"):
-                    seg_str = line.split(":", 1)[1].strip()
-                elif line.startswith("Seg_f (Used for plotting block signal after bandpass filter and window have been applied)"):
-                    segf_str = line.split(":", 1)[1].strip()
+        y_values = [char_to_y.get(ch, 0) for ch in block_symbols]
+        x_values = np.arange(len(block_symbols))
 
-            # Function to parse a bracketed, space-separated list of numbers
-            def parse_array_from_str(s):
-                if not s:
-                    return np.array([])
-                s = s.strip("[]")  # remove brackets
-                # split by whitespace or comma
-                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", s)
-                return np.array([float(x) for x in numbers])
+        return {
+            "x": x_values,
+            "y": y_values,
+            "dtmf_chars": dtmf_chars
+        }
 
-            seg = parse_array_from_str(seg_str)
-            seg_f = parse_array_from_str(segf_str)
 
-        return seg, seg_f
+    def plot_amplitude_and_DTMFtones(self, barplot, amplitudeplot, block_ms=40):
 
-    # This function opens txt file, reads seg, and seg_f arrays, and plots them (time domain)
-    @staticmethod
-    def plot_saved_block_tdomain(seg=None, seg_f=None):
-        plt.figure(figsize=(10,4))
-        plt.plot(seg, label="Original block", alpha=0.7)
-        plt.plot(seg_f, label="Filtered + windowed", alpha=0.7)
-        plt.title("First detected DTMF block (time domain)")
-        plt.xlabel("Sample index")
-        plt.ylabel("Amplitude")
-        plt.legend()
-        plt.grid(True)
+        # ----- Extract amplitude data -----
+        t = amplitudeplot['t']              # seconds
+        envelope = amplitudeplot['envelope']
+
+        # ----- Extract DTMF bar data -----
+        x_blocks = barplot['x']             # block indices
+        y_blocks = barplot['y']             # categorical ints
+        dtmf_chars = barplot['dtmf_chars']  # labels
+
+        # Convert block index → seconds
+        block_sec = block_ms / 1000.0
+        x_blocks_sec = x_blocks * block_sec
+
+        # ---------- FIX 1: compensate for amplitude trimming ----------
+        TRIM_SEC = 2.0  # because you trimmed first 2000 ms = 2 seconds
+        x_blocks_sec = x_blocks_sec - TRIM_SEC
+
+        # ---------- FIX 2: compensate for envelope smoothing delay ----------
+        # envelope uses 50ms window, so shift bars left by half → 25 ms
+        ALIGN_SHIFT = 0.025  # 25 ms
+        x_blocks_sec = x_blocks_sec - ALIGN_SHIFT
+
+        # Remove bars that fall before t=0 after shifting
+        valid = x_blocks_sec >= 0
+        x_blocks_sec = x_blocks_sec[valid]
+        y_blocks = np.array(y_blocks)[valid]
+
+        # ---------- Create the combined plot ----------
+        plt.figure(figsize=(20, 6))
+
+        # LEFT AXIS: amplitude envelope
+        ax1 = plt.gca()
+        ax1.plot(t, envelope, color="red", linewidth=1.8)
+        ax1.set_ylabel("Amplitude", color="red")
+        ax1.tick_params(axis="y", labelcolor="red")
+        ax1.set_ylim(0, 1.1)
+        ax1.grid(True, linestyle="--", alpha=0.3)
+
+        # RIGHT AXIS: DTMF symbol bars
+        ax2 = ax1.twinx()
+
+        bar_width = block_sec * 0.9   # bars nearly fill block width
+
+        ax2.bar(
+            x_blocks_sec,
+            y_blocks,
+            width=bar_width,
+            color="blue",
+            edgecolor="black",
+            alpha=0.5,
+            align="center"
+        )
+
+        ax2.set_ylabel("DTMF Symbol", color="black")
+        ax2.set_yticks(range(len(dtmf_chars)))
+        ax2.set_yticklabels(dtmf_chars)
+
+        # X axis
+        ax1.set_xlabel("Time (seconds)")
+        ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
+
+        plt.title("Amplitude Envelope + DTMF Detection (Overlayed)")
+        plt.tight_layout()
         plt.show()
-        
-    # This function opens txt file, reads seg, and seg_f arrays, and plots them (freq domain)
-    @staticmethod
-    def plot_saved_block_fdomain(seg=None, seg_f=None):
-        plt.figure(figsize=(10,4))
-        plt.magnitude_spectrum(seg, Fs=8000, scale='dB', label="Before")
-        plt.magnitude_spectrum(seg_f, Fs=8000, scale='dB', label="After")
-        plt.title("Frequency spectrum before vs after bandpass")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-    
-        
+
+
+

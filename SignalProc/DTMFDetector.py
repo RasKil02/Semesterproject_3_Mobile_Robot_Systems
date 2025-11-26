@@ -16,6 +16,8 @@ LUT = {
     (941,1209):'*',(941,1336):'0',(941,1477):'#',(941,1633):'D'
 }
 
+plotter = Plotting()
+
 # Sets up hanning window
 def hann(N: int):
     n = np.arange(N)
@@ -33,7 +35,7 @@ class DigitStabilizer:
       - gap_ms : krævet stilhed før næste symbol (hindrer dobbeltskud)
     Tilstande: IDLE -> CANDIDATE -> LOCKED -> GAP
     """
-    def __init__(self, hold_ms=25, miss_ms=20, gap_ms=78):
+    def __init__(self, hold_ms=130, miss_ms=50, gap_ms=78):
         self.hold_ms = float(hold_ms)
         self.miss_ms = float(miss_ms)
         self.gap_ms  = float(gap_ms)
@@ -216,20 +218,28 @@ class DTMFDetector:
         # IMPORTANT: use stabilizer exactly like your old analyze()
         out = stabilizer.update(sym, now_ms=now_ms)
 
-        return out
+        return sym, out
 
     def stream_and_detect(self, stabilizer, sampler):
-        
+
         digits = []
-        start_stage = 0       # 0 = waiting for '*', 1 = waiting for '#'
+        start_stage = 0          # 0 = waiting for '*', 1 = waiting for '#'
         collecting_payload = False
 
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
 
+        amplitudes = []          # <-- store amplitude samples here
+        block_symbols = []      # <-- store detected symbols here
+
         for block in sampler.stream_blocks(self.block):
-            out = self.analyze_block(block, stabilizer, t_ms)
+
+            # Append block samples to amplitude list
+            amplitudes.extend(block.tolist())
+
+            sym, out = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
+            block_symbols.append(sym if sym is not None else " ")
 
             if not out:
                 continue
@@ -237,33 +247,35 @@ class DTMFDetector:
             if not collecting_payload:
 
                 if start_stage == 0:
-                    # Expecting first start bit '*'
                     if out == "*":
                         digits.append(out)
                         start_stage = 1
-                        print("Start symbol '*' detected, waiting for '#'...")
-                    # ignore everything else
+                        print("Start '*' detected → waiting for '#'")
                     continue
 
                 elif start_stage == 1:
-                    # Expecting second start bit '#'
                     if out == "#":
                         digits.append(out)
                         collecting_payload = True
-                        print("Second symbol '#' detected, collecting payload digits...")
+                        print("Second '#' detected → collecting digits...")
                     else:
-                        # WRONG second symbol → reset to stage 0
-                        print(f"Expected '#', but got '{out}'. Resetting to wait for '*'.")
+                        print(f"Expected '#', got '{out}' → resetting")
                         digits.clear()
                         start_stage = 0
                     continue
-                
+
+            # Collect payload digits
             digits.append(out)
-            
-            print(f"Detected digits so far: {''.join(digits)}")
+            print("Detected digits so far:", "".join(digits))
 
             if len(digits) == 7:
+                # Convert amplitudes to numpy array for plotting
+                amplitudes_arr = np.array(amplitudes, dtype=np.float32)
+                barplot = plotter.barplot_of_DTMFtones(block_symbols)
+                amplitudeplot = plotter.plot_signal_amplitude(amplitudes_arr)
+                plotter.plot_amplitude_and_DTMFtones(barplot, amplitudeplot)
                 return "".join(digits)
+
 
     # Helper to find top 2 frequencies
     @staticmethod
