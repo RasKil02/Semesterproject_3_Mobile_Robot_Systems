@@ -264,9 +264,33 @@ class DTMFDetector:
 
             if len(digits) == 7:
                 return "".join(digits)
+            
+    def stream_and_detect_duration(self, stabilizer, sampler, duration):
+        digits = []
+        t_ms = 0.0
+        block_ms = 1000.0 * self.block / self.fs
+        max_time_ms = duration * 1000.0  # Varighed i ms
+
+        for block in sampler.stream_blocks(self.block):
+            if t_ms > max_time_ms:
+                print("Duration exceeded, stopping detection.")
+                break
+
+            out = self.analyze_block(block, stabilizer, t_ms)
+            t_ms += block_ms
+
+            if out:
+                digits.append(out)
+                print(f"Detected digits so far: {''.join(digits)}")
+
+        return "".join(digits)
+
+
+
 
     # Helper to find top 2 frequencies
     @staticmethod
     def _top2(energy_dict, freqs_tuple):
         top = sorted(freqs_tuple, key=lambda f: energy_dict[f], reverse=True)
         return top[0], top[1]
+    

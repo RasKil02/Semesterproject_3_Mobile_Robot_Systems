@@ -3,6 +3,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
+#from machine import Pin
 #import serial
 import time
 
@@ -18,6 +19,12 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
 
         self.pub = self.create_publisher(TwistStamped, 'cmd_vel', 10) # creates a topic named cmd_vel of type TwistStamped(sends velocity commands to the robot)
         self.get_logger().info(f"RoutePlanner initialized with fixed rate: {self.rate_hz} Hz")
+
+         # ÅBN UART ÉN GANG
+        self.ser = serial.Serial(
+            port="/dev/serial0",
+            baudrate=9600,
+            timeout=1)
 
     # Makes a TwistStamped message with given linear and angular velocities
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
@@ -73,13 +80,14 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.publish_vw_for_duration(0.0, angular_speed, duration)
         self.stop(0.3)
 
-
     def dropSupply(self, supplies: int):
-        if supplies <= 0:
-            self.get_logger().info('No supplies to drop')
+        if supplies < 0 or supplies > 3:
+            self.get_logger().info('Invalid supply number')
             return
-        for i in range(1, supplies + 1):
-            self.get_logger().info(f'Dropping {i} supply' if i == 1 else f'Dropping {i} supplies')
+
+        print("Dropping supply:", supplies)
+        self.send_data(supplies)
+
 
     # Executes the full route: drive out, rotate, drop supplies, return home
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
@@ -89,7 +97,11 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.rotate(angular_speed, 2.0)
         # drop
         time.sleep(2.0)
+
+        # her skal der skrives noget kode i forhold til at styre drop mekanismen
         self.dropSupply(supplies)
+        time.sleep(2.0)
+
         # return with same |speed| and same duration
         self.ReturnHome(speed, duration)
 
@@ -120,14 +132,12 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         else:
             self.get_logger().warn('Unknown Destination')
 
-    def send_data(data):
-            # Åbn UART-porten
-        ser = serial.Serial(
-        port="/dev/serial0",   # Raspberry Pi UART port
-        baudrate=9600,         # Samme baudrate som Pico
-        timeout=1)
+    def send_data(self, data):
+  
+        if isinstance(data, int):
+            data = str(data)  # konverter int -> string
 
-        ser.write(data.encode())
+        self.ser.write(data.encode())
         print("Sent:", data)
 
 
