@@ -114,6 +114,7 @@ class Protocol:
         for freqs in signal:
                 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
+                sd.stop()
                 sd.play(tone, fs)
                 sd.wait(1)
                 time.sleep(0.28)
