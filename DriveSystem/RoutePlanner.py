@@ -86,7 +86,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             return
 
         print("Dropping supply:", supplies)
-        self.send_data(supplies)
+        #self.send_data(supplies)
 
 
     # Executes the full route: drive out, rotate, drop supplies, return home
