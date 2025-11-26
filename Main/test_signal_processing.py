@@ -22,7 +22,7 @@ def readCommand():
     )
 
     # --- Stabilizer ---
-    stabilizer = DigitStabilizer(hold_ms=25, miss_ms=15, gap_ms=80)
+    stabilizer = DigitStabilizer(hold_ms=25, miss_ms=20, gap_ms=78)
 
     # --- Audio sampler (streaming) ---
     sampler = AudioSampler(fs=args.fs)
