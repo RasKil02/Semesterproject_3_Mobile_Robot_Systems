@@ -168,7 +168,6 @@ def main():
 
 
 if __name__ == "__main__":
-    t1.start()
     main()
 
 
