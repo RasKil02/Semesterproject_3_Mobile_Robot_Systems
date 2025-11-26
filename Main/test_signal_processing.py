@@ -17,12 +17,12 @@ def readCommand():
         block_ms=args.block_ms,
         hop_ms=args.hop_ms,
         lowcut=620, highcut=1700, bp_order=4,
-        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
+        min_db=-20, sep_db=5, dom_db=2, snr_db=5,
         twist_pos_db=+30, twist_neg_db=-30
     )
 
     # --- Stabilizer ---
-    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=75)
+    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=60)
 
     # --- Audio sampler (streaming) ---
     sampler = AudioSampler(fs=args.fs)
