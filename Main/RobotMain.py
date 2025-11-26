@@ -12,7 +12,7 @@ sys.path.append(project_root)
 
 import numpy as np
 import sounddevice as sd
-from Protocol import Protocol
+from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
