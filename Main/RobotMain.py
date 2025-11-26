@@ -24,8 +24,6 @@ import argparse
 import threading
 import queue
 
-#import serial
-
 proto = Protocol()
 newCommandEvent = threading.Event()
 control_queue = queue.Queue()
