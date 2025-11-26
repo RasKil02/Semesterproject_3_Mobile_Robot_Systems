@@ -31,31 +31,17 @@ newCommandEvent = threading.Event()
 control_queue = queue.Queue()
 
 def readCommandDuration(duration):
-    import argparse
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--fs", type=int, default=44100)
-    ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.5)
-    args = ap.parse_args()
 
     # --- Create detector ---
-    detector = DTMFDetector(
-        fs=args.fs,
-        block_ms=args.block_ms,
-        hop_ms=args.hop_ms,
-        lowcut=620, highcut=1700, bp_order=4,
-        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+4, twist_neg_db=-8
-    )
+    detector = DTMFDetector()
 
     # --- Stabilizer ---
-    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    stabilizer = DigitStabilizer()
 
     # --- Audio sampler (streaming) ---
-    sampler = AudioSampler(fs=args.fs)
+    sampler = AudioSampler()
 
-    print(f"Listening for DTMF command for max {duration} seconds (*#, then 5 digits)...")
+    print("Listening for DTMF command (*#, then 5 digits)...")
     cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
 
     print("\n--- Detected command ---")
@@ -63,27 +49,15 @@ def readCommandDuration(duration):
     return cmd
 
 def readCommand():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--fs", type=int, default=44100)
-    ap.add_argument("--block_ms", type=float, default=30.0)
-    ap.add_argument("--hop_ms",   type=float, default=7.5)
-    args = ap.parse_args()
 
     # --- Create detector ---
-    detector = DTMFDetector(
-        fs=args.fs,
-        block_ms=args.block_ms,
-        hop_ms=args.hop_ms,
-        lowcut=620, highcut=1700, bp_order=4,
-        min_db=-20, sep_db=5, dom_db=4, snr_db=8,
-        twist_pos_db=+4, twist_neg_db=-8
-    )
+    detector = DTMFDetector()
 
     # --- Stabilizer ---
-    stabilizer = DigitStabilizer(hold_ms=20, miss_ms=20, gap_ms=55)
+    stabilizer = DigitStabilizer()
 
     # --- Audio sampler (streaming) ---
-    sampler = AudioSampler(fs=args.fs)
+    sampler = AudioSampler()
 
     print("Listening for DTMF command (*#, then 5 digits)...")
     cmd = detector.stream_and_detect(stabilizer, sampler)
@@ -145,6 +119,9 @@ def main():
                     
                 except ValueError:
                     print("Error decoding command for checksu. One bit was not a number\n" )
+                    is_valid = False
+                except IndexError:
+                    print("Error decoding command: Command too short (index out of range)\n")
                     is_valid = False
             
             if (is_valid):
