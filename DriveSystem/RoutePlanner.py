@@ -21,10 +21,10 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.get_logger().info(f"RoutePlanner initialized with fixed rate: {self.rate_hz} Hz")
 
          # ÅBN UART ÉN GANG
-        self.ser = serial.Serial(
-            port="/dev/serial0",
-            baudrate=9600,
-            timeout=1)
+        #self.ser = serial.Serial(
+         #   port="/dev/serial0",
+          #  baudrate=9600,
+           # timeout=1)
 
     # Makes a TwistStamped message with given linear and angular velocities
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
