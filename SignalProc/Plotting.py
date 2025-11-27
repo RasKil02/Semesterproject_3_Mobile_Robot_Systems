@@ -11,7 +11,10 @@ class Plotting:
         pass
             
     def plot_signal_amplitude(self, amplitude_arr, fs=44100):
-
+        print(amplitude_arr)
+        lengthoflist = len(amplitude_arr)
+        print("Length of list (amplitude):", lengthoflist)
+        
         trim_ms = 2000
         cut = int((trim_ms / 1000) * fs)
         amplitude_arr = amplitude_arr[cut:]
@@ -29,6 +32,9 @@ class Plotting:
         }
 
     def barplot_of_DTMFtones(self, block_symbols):
+        print("Received block symbols (symbols):", block_symbols)
+        lengthoflist = len(block_symbols)
+        print("Length of list:", lengthoflist)
 
         print("Block Symbols:", block_symbols)
 
