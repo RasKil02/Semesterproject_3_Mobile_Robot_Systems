@@ -1,11 +1,15 @@
 ```mermaid
+
 flowchart TD
-    A[Input command] --> B[Computer plays new command with DTMF sounds]
+    A[Input command] --> B[Computer plays command with DTMF sounds]
     B --> C[Computer sets timeout and listen for respons]
 
     C --> D[Robot listens for DTMF sounds and decodes]
-    D --> |No| E[Runs CRC to check if command is valid]
-    E --> F{is valid?}
+    D --> E{Does Robot get DTMF tone?}
+    E --> |Yes| V[Runs CRC to check if command is valid]
+    E --> |No| W[Wait for timeout]
+    W --> B
+    V --> F{is valid?}
     F --> |Yes| G[Run RoutePlanner with command]
     G --> H[Send ACK to wa]
     F --> |No| I[Play Nack command]
@@ -22,7 +26,7 @@ flowchart TD
     P --> |Yes| O[Ready for new command]
     N --> L[Playds old DTMF command with same sequence number]
     L --> Q[Robot listen for command with same sequence number and decodes]
-    Q --> E
+    Q --> V  
 
     P --> |No| R[Timeout runs out]
     R --> S[Computer retransmit command same sequence nr]
