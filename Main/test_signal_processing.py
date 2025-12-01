@@ -16,7 +16,7 @@ def readCommand():
     sampler = AudioSampler()
 
     print("Listening for DTMF command (*#, then 5 digits)...")
-    cmd = detector.stream_and_detect(stabilizer, sampler)
+    cmd = detector.stream_and_detect(stabilizer, sampler, True)
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")

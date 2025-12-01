@@ -218,9 +218,17 @@ class DTMFDetector:
         # IMPORTANT: use stabilizer exactly like your old analyze()
         out = stabilizer.update(sym, now_ms=now_ms)
 
-        return sym, out
+        return sym, out, {
+            "snr_low": snr_low_db,
+            "snr_high": snr_high_db,
+            "min_db_low": l_abs_db - blk_db,
+            "min_db_high": h_abs_db - blk_db,
+            "sep_low": l_abs_db - l2_db,
+            "sep_high": h_abs_db - h2_db,
+            "dom_low": l_dom_db,
+            "dom_high": h_dom_db,}
 
-    def stream_and_detect(self, stabilizer, sampler):
+    def stream_and_detect(self, stabilizer, sampler, plot=False):
 
         digits = []
         start_stage = 0          # 0 = waiting for '*', 1 = waiting for '#'
@@ -229,17 +237,28 @@ class DTMFDetector:
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
 
-        amplitudes = []          # <-- store amplitude samples here
-        block_symbols = []      # <-- store detected symbols here
+        amplitudes = []         # <-- store amplitude samples here
+        block_symbols = []     # <-- store detected symbols here
+        SNR_values = []       # <-- store SNR values here
+        min_db_values = []   # <-- store min_db values here
+        sep_db_values = []  # <-- store sep_db values here
+        dom_db_values = [] # <-- store dom_db values here        
 
         for block in sampler.stream_blocks(self.block):
 
-            # Append block samples to amplitude list
-            amplitudes.extend(block.tolist())
-
-            sym, out = self.analyze_block(block, stabilizer, t_ms)
+            sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
-            block_symbols.append(sym if sym is not None else " ")
+            
+            # --- PLOTTING DATA COLLECTION ---
+            # Append block samples to amplitudes list if 2 seconds have passed
+            if t_ms >= 2000.0:
+                amplitudes.extend(block.tolist())
+                block_symbols.append(sym if sym is not None else " ")
+                SNR_values.append(min(metrics['snr_low'], metrics['snr_high']))
+                min_db_values.append(min(metrics['min_db_low'], metrics['min_db_high']))
+                sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
+                dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
+            # -----------------------------------
 
             if not out:
                 continue
@@ -271,9 +290,17 @@ class DTMFDetector:
             if len(digits) == 7:
                 # Convert amplitudes to numpy array for plotting
                 amplitudes_arr = np.array(amplitudes, dtype=np.float32)
-                #barplot = plotter.barplot_of_DTMFtones(block_symbols)
-                #amplitudeplot = plotter.plot_signal_amplitude(amplitudes_arr)
-                #plotter.plot_amplitude_and_DTMFtones(barplot, amplitudeplot)
+                if plot == True:
+                    amplitude_plot = plotter.plot_signal_amplitude(amplitudes_arr, fs=self.fs)
+                    barplotDTMF = plotter.barplot_of_DTMFtones(block_symbols)
+                    barplotSNR = plotter.barplot_of_threshold(SNR_values, self.snr_db)
+                    barplotSepDB = plotter.barplot_of_threshold(sep_db_values, self.sep_db)
+                    barplotDomDB = plotter.barplot_of_threshold(dom_db_values, self.dom_db)
+                    
+                    plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude Plot", block_ms=block_ms)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude Plot", block_ms=block_ms)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
                 return "".join(digits)
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
