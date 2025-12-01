@@ -304,27 +304,67 @@ class DTMFDetector:
                 return "".join(digits)
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
+
         digits = []
+        start_stage = 0               # 0 = waiting for '*', 1 = waiting for '#'
+        collecting_payload = False
+
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
-        max_time_ms = duration * 1000.0  # Varighed i ms
+        max_time_ms = duration * 1000.0
+
+        amplitudes = []
+        block_symbols = []
 
         for block in sampler.stream_blocks(self.block):
+
             if t_ms > max_time_ms:
                 print("Duration exceeded, stopping detection.")
                 break
 
-            out = self.analyze_block(block, stabilizer, t_ms)
+            # For amplitude plots (samme som ny)
+            amplitudes.extend(block.tolist())
+
+            # 🟢 KORREKT unpack
+            sym, out = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
+            block_symbols.append(sym if sym is not None else " ")
 
-            if out:
-                digits.append(out)
-                print(f"Detected digits so far: {''.join(digits)}")
+            if not out:
+                continue
 
+            if not collecting_payload:
+
+                # Stage 0: vent på *
+                if start_stage == 0:
+                    if out == "*":
+                        digits.append(out)
+                        start_stage = 1
+                        print("Start '*' detected → waiting for '#'")
+                    continue
+
+                # Stage 1: vent på #
+                elif start_stage == 1:
+                    if out == "#":
+                        digits.append(out)
+                        collecting_payload = True
+                        print("Second '#' detected → collecting digits...")
+                    else:
+                        print(f"Expected '#', got '{out}' → resetting")
+                        digits.clear()
+                        start_stage = 0
+                    continue
+
+            # Payload digits
+            digits.append(out)
+            print("Detected digits so far:", "".join(digits))
+
+            # When full command ( * # + 5 payload = 7 digits )
+            if len(digits) == 7:
+                return "".join(digits)
+
+        # If time runs out
         return "".join(digits)
-
-
-
 
 
     # Helper to find top 2 frequencies
