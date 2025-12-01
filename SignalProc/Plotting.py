@@ -49,6 +49,22 @@ class Plotting:
             "y": y_values,
             "thresholdline": thresholdline
         }
+        
+    def barplot_of_twist(self, twist_values, twist_neg, twist_pos):
+        x_values = np.arange(len(twist_values))
+        y_values = twist_values
+
+        # two threshold lines
+        neg_line = np.full(len(twist_values), twist_neg)
+        pos_line = np.full(len(twist_values), twist_pos)
+
+        return {
+            "x": x_values,
+            "y": y_values,
+            "neg_line": neg_line,
+            "pos_line": pos_line
+        }
+
 
     def plot_amplitude_and_DTMFtones(self, barplot, amplitudeplot, block_ms=40):
 
@@ -101,7 +117,6 @@ class Plotting:
 
         plt.title("Amplitude Envelope + DTMF Detection (Overlayed)")
         plt.tight_layout()
-        plt.show()
 
     def plot_amplitude_and_thresholds(self, amplitudeplot, thresholdplot, title, block_ms=40):
 
@@ -162,7 +177,50 @@ class Plotting:
 
         plt.title(title)
         plt.tight_layout()
-        plt.show()
+
+    def plot_amplitude_and_twist(self, amplitudeplot, twistplot, block_ms=40):
+
+        t = amplitudeplot["t"]
+        envelope = amplitudeplot["envelope"]
+
+        x_blocks = twistplot["x"]
+        y_values = twistplot["y"]
+        neg_line = twistplot["neg_line"]
+        pos_line = twistplot["pos_line"]
+
+        block_sec = block_ms / 1000.0
+        x_blocks_sec = x_blocks * block_sec
+
+        plt.figure(figsize=(20,6))
+
+        # amplitude
+        ax1 = plt.gca()
+        ax1.plot(t, envelope, color="red", linewidth=1.4)
+        ax1.set_ylabel("Amplitude", color="red")
+        ax1.tick_params(axis="y", labelcolor="red")
+        ax1.grid(True, linestyle="--", alpha=0.3)
+
+        # twist bars
+        ax2 = ax1.twinx()
+        ax2.bar(
+            x_blocks_sec, y_values,
+            width=block_sec * 0.9,
+            color="blue", edgecolor="black",
+            alpha=0.4
+        )
+
+        # add two twist threshold lines
+        ax2.plot(x_blocks_sec, neg_line, color="yellow", linestyle="dashed", linewidth=1.4)
+        ax2.plot(x_blocks_sec, pos_line, color="yellow", linestyle="dashed", linewidth=1.4)
+
+        ax2.set_ylabel("Twist (dB)", color="blue")
+        ax2.tick_params(axis="y", labelcolor="blue")
+
+        ax1.set_xlabel("Time (seconds)")
+        ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
+
+        plt.title("Twist and Amplitude Plot")
+        plt.tight_layout()
 
 
 

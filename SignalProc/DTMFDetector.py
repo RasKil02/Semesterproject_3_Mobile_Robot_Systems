@@ -5,6 +5,7 @@ from SignalProc.BandpassFilter import BandPassFilter
 from SignalProc.Goertzel import GoertzelAlgorithm
 from SignalProc.AudioSampling import AudioSampler
 from SignalProc.Plotting import Plotting
+import matplotlib.pyplot as plt
 
 # --- DTMF opsætning ---
 FREQS_LOW  = (697, 770, 852, 941)
@@ -226,7 +227,8 @@ class DTMFDetector:
             "sep_low": l_abs_db - l2_db,
             "sep_high": h_abs_db - h2_db,
             "dom_low": l_dom_db,
-            "dom_high": h_dom_db,}
+            "dom_high": h_dom_db,
+            "twist": twist}
 
     def stream_and_detect(self, stabilizer, sampler, plot=False):
 
@@ -242,7 +244,8 @@ class DTMFDetector:
         SNR_values = []       # <-- store SNR values here
         min_db_values = []   # <-- store min_db values here
         sep_db_values = []  # <-- store sep_db values here
-        dom_db_values = [] # <-- store dom_db values here        
+        dom_db_values = [] # <-- store dom_db values here      
+        twist_values = [] # <-- store twist values here  
 
         for block in sampler.stream_blocks(self.block):
 
@@ -258,6 +261,7 @@ class DTMFDetector:
                 min_db_values.append(min(metrics['min_db_low'], metrics['min_db_high']))
                 sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
                 dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
+                twist_values.append(metrics['twist'])
             # -----------------------------------
 
             if not out:
@@ -296,11 +300,18 @@ class DTMFDetector:
                     barplotSNR = plotter.barplot_of_threshold(SNR_values, self.snr_db)
                     barplotSepDB = plotter.barplot_of_threshold(sep_db_values, self.sep_db)
                     barplotDomDB = plotter.barplot_of_threshold(dom_db_values, self.dom_db)
+                    barplotMinDB = plotter.barplot_of_threshold(min_db_values, self.min_db)
+                    barplotTwist = plotter.barplot_of_twist(twist_values, self.twist_neg_db, self.twist_pos_db)
                     
                     plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotMinDB, "Min_db and Amplitude Plot", block_ms=block_ms)
+                    plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
+                    
+                    plt.show()
+                    
                 return "".join(digits)
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
