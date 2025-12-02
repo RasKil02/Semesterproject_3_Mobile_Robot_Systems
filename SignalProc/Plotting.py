@@ -221,6 +221,61 @@ class Plotting:
 
         plt.title("Twist and Amplitude Plot")
         plt.tight_layout()
+        
+    def plot_amplitude_and_all_thresholds(self, amplitudeplot, snrplot, sepdpplot, domdbplot, DTMFtoneplot, twistplot, block_ms=40):
+
+        t = amplitudeplot["t"]
+        envelope = amplitudeplot["envelope"]
+
+        block_sec = block_ms / 1000.0
+
+        plt.figure(figsize=(20, 10))
+
+        # amplitude
+        ax1 = plt.gca()
+        ax1.plot(t, envelope, color="red", linewidth=1.4)
+        ax1.set_ylabel("Amplitude", color="red")
+        ax1.tick_params(axis="y", labelcolor="red")
+        ax1.grid(True, linestyle="--", alpha=0.3)
+
+        ax_list = [ax1]
+
+        plot_list = [snrplot, sepdpplot, domdbplot, DTMFtoneplot, twistplot]
+        colors = ["blue", "green", "purple", "orange", "cyan"]
+        labels = ["SNR", "Separation dB", "Dominant dB", "DTMF Tone", "Twist (dB)"]
+
+        for i, plot_data in enumerate(plot_list):
+            x_blocks = plot_data["x"]
+            y_values = plot_data["y"]
+
+            x_blocks_sec = x_blocks * block_sec
+
+            ax_new = ax1.twinx()
+            ax_new.spines["right"].set_position(("outward", 60 * (i + 1)))
+
+            bar_width = block_sec * 0.9
+
+            ax_new.bar(
+                x_blocks_sec,
+                y_values,
+                width=bar_width,
+                color=colors[i],
+                edgecolor="black",
+                alpha=0.4,
+                align="center",
+                label=labels[i]
+            )
+
+            ax_new.set_ylabel(labels[i], color=colors[i])
+            ax_new.tick_params(axis="y", labelcolor=colors[i])
+
+            ax_list.append(ax_new)
+
+        ax1.set_xlabel("Time (seconds)")
+        ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
+
+        plt.title("Amplitude and All Thresholds Plot")
+        plt.tight_layout()
 
 
 

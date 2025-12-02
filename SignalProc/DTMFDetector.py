@@ -309,6 +309,7 @@ class DTMFDetector:
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotMinDB, "Min_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
+                    plotter.plot_amplitude_and_all_thresholds(amplitude_plot, barplotSNR, barplotSepDB, barplotDomDB, barplotDTMF, barplotTwist, block_ms=block_ms)
                     
                     plt.show()
                     
