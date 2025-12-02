@@ -300,16 +300,14 @@ class DTMFDetector:
                     barplotSNR = plotter.barplot_of_threshold(SNR_values, self.snr_db)
                     barplotSepDB = plotter.barplot_of_threshold(sep_db_values, self.sep_db)
                     barplotDomDB = plotter.barplot_of_threshold(dom_db_values, self.dom_db)
-                    barplotMinDB = plotter.barplot_of_threshold(min_db_values, self.min_db)
                     barplotTwist = plotter.barplot_of_twist(twist_values, self.twist_neg_db, self.twist_pos_db)
                     
                     plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotMinDB, "Min_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
-                    plotter.plot_amplitude_and_all_thresholds(amplitude_plot, barplotSNR, barplotSepDB, barplotDomDB, barplotDTMF, barplotTwist, block_ms=block_ms)
+                    #plotter.plot_amplitude_and_all_thresholds(amplitude_plot, barplotDTMF, barplotSNR, barplotSepDB, barplotDomDB, barplotTwist, block_ms=block_ms)
                     
                     plt.show()
                     

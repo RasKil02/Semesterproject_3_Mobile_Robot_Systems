@@ -65,7 +65,6 @@ class Plotting:
             "pos_line": pos_line
         }
 
-
     def plot_amplitude_and_DTMFtones(self, barplot, amplitudeplot, block_ms=40):
 
         # ----- Extract amplitude data -----
@@ -82,7 +81,7 @@ class Plotting:
         x_blocks_sec = x_blocks * block_sec
 
         # ---------- Create the combined plot ----------
-        plt.figure(figsize=(20, 6))
+        plt.figure(figsize=(18, 6))
 
         # LEFT AXIS: amplitude envelope
         ax1 = plt.gca()
@@ -94,7 +93,7 @@ class Plotting:
 
         # RIGHT AXIS: DTMF symbol bars
         ax2 = ax1.twinx()
-
+        
         bar_width = block_sec * 0.9   # bars nearly fill block width
 
         ax2.bar(
@@ -103,13 +102,21 @@ class Plotting:
             width=bar_width,
             color="blue",
             edgecolor="black",
-            alpha=0.5,
+            alpha=0.6,
             align="center"
         )
 
         ax2.set_ylabel("DTMF Symbol", color="black")
         ax2.set_yticks(range(len(dtmf_chars)))
         ax2.set_yticklabels(dtmf_chars)
+        
+        for y in range(len(dtmf_chars)):
+            ax2.axhline(
+                y,
+                color="black",
+                linestyle="-",
+                linewidth=0.6,
+                alpha=0.7)
 
         # X axis
         ax1.set_xlabel("Time (seconds)")
@@ -133,7 +140,7 @@ class Plotting:
         x_blocks_sec = x_blocks * block_sec
 
         # ---------- Create figure ----------
-        plt.figure(figsize=(20, 6))
+        plt.figure(figsize=(18, 6))
 
         # LEFT AXIS: amplitude envelope
         ax1 = plt.gca()
@@ -154,7 +161,7 @@ class Plotting:
             width=bar_width,
             color="blue",
             edgecolor="black",
-            alpha=0.4,
+            alpha=0.6,
             align="center",
             label="Measured Value"
         )
@@ -165,12 +172,17 @@ class Plotting:
             threshold_line,
             color="yellow",
             linestyle="dashed",
-            linewidth=1.5,
+            linewidth=2,
             label="Threshold"
         )
 
         ax2.set_ylabel("Threshold-measured value", color="blue")
         ax2.tick_params(axis="y", labelcolor="blue")
+
+        Rmin, Rmax = ax2.get_ylim()
+        if Rmin < 0:
+        # extend left axis just enough to align visually
+            ax1.set_ylim(bottom = Rmin * 0.002)   # small proportional extension
 
         ax1.set_xlabel("Time (seconds)")
         ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
@@ -193,91 +205,173 @@ class Plotting:
 
         plt.figure(figsize=(20,6))
 
-        # amplitude
+        # LEFT AXIS: amplitude
         ax1 = plt.gca()
         ax1.plot(t, envelope, color="red", linewidth=1.4)
         ax1.set_ylabel("Amplitude", color="red")
         ax1.tick_params(axis="y", labelcolor="red")
         ax1.grid(True, linestyle="--", alpha=0.3)
 
-        # twist bars
+        # RIGHT AXIS: twist bars
         ax2 = ax1.twinx()
         ax2.bar(
             x_blocks_sec, y_values,
             width=block_sec * 0.9,
             color="blue", edgecolor="black",
-            alpha=0.4
+            alpha=0.6
         )
 
-        # add two twist threshold lines
-        ax2.plot(x_blocks_sec, neg_line, color="yellow", linestyle="dashed", linewidth=1.4)
-        ax2.plot(x_blocks_sec, pos_line, color="yellow", linestyle="dashed", linewidth=1.4)
+        # Twist threshold lines
+        ax2.plot(x_blocks_sec, neg_line, color="yellow",
+                linestyle="dashed", linewidth=1.4)
+        ax2.plot(x_blocks_sec, pos_line, color="yellow",
+                linestyle="dashed", linewidth=1.4)
 
         ax2.set_ylabel("Twist (dB)", color="blue")
         ax2.tick_params(axis="y", labelcolor="blue")
+
+        Rmin, Rmax = ax2.get_ylim()      # twist axis limits
+
+        if Rmin < 0:
+            # How much of twist-range lies below zero?
+            frac = abs(Rmin) / (Rmax - Rmin)
+
+            # Get amplitude axis limits
+            Lmin, Lmax = ax1.get_ylim()
+            Lrange = Lmax - Lmin
+
+            # Extend amplitude axis downward by equivalent fraction
+            new_Lmin = -frac * Lrange / (1 - frac)
+
+            ax1.set_ylim(new_Lmin, Lmax)
+        # ------------------------------------------------------------
 
         ax1.set_xlabel("Time (seconds)")
         ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
 
         plt.title("Twist and Amplitude Plot")
         plt.tight_layout()
-        
-    def plot_amplitude_and_all_thresholds(self, amplitudeplot, snrplot, sepdpplot, domdbplot, DTMFtoneplot, twistplot, block_ms=40):
+
+    def plot_amplitude_and_all_thresholds(
+            self,
+            amplitudeplot,
+            DTMFtoneplot,
+            snrplot,
+            sepdpplot,
+            domdbplot,
+            twistplot,
+            block_ms=40):
 
         t = amplitudeplot["t"]
         envelope = amplitudeplot["envelope"]
-
         block_sec = block_ms / 1000.0
 
-        plt.figure(figsize=(20, 10))
+        # ------------------------------------------------------------
+        # Create figure with 2 stacked subplots
+        # ------------------------------------------------------------
+        fig, (ax_top, ax_bottom) = plt.subplots(
+            2, 1,
+            figsize=(20, 12),
+            sharex=True,
+            gridspec_kw={'height_ratios': [1, 1.3]}
+        )
 
-        # amplitude
-        ax1 = plt.gca()
-        ax1.plot(t, envelope, color="red", linewidth=1.4)
-        ax1.set_ylabel("Amplitude", color="red")
-        ax1.tick_params(axis="y", labelcolor="red")
-        ax1.grid(True, linestyle="--", alpha=0.3)
+        # ============================================================
+        #  TOP PLOT: Amplitude + DTMF tones
+        # ============================================================
 
-        ax_list = [ax1]
+        # 1) DTMF bars first (so amplitude draws on top)
+        x_dtmf = DTMFtoneplot["x"] * block_sec
+        y_dtmf = DTMFtoneplot["y"]
 
-        plot_list = [snrplot, sepdpplot, domdbplot, DTMFtoneplot, twistplot]
-        colors = ["blue", "green", "purple", "orange", "cyan"]
-        labels = ["SNR", "Separation dB", "Dominant dB", "DTMF Tone", "Twist (dB)"]
+        dtmf_chars = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","*","#"]
 
-        for i, plot_data in enumerate(plot_list):
-            x_blocks = plot_data["x"]
+        ax2_top = ax_top.twinx()
+        bar_width = block_sec * 0.9
+        ax2_top.bar(
+            x_dtmf, y_dtmf,
+            width=bar_width,
+            color="cornflowerblue",
+            edgecolor="black",
+            alpha=0.35
+        )
+        ax2_top.set_ylabel("DTMF Tone", color="blue")
+        ax2_top.set_yticks(range(len(dtmf_chars)))
+        ax2_top.set_yticklabels(dtmf_chars)
+        ax2_top.tick_params(axis="y", labelcolor="blue")
+
+        # 2) Amplitude curve on top
+        ax_top.plot(t, envelope, color="red", linewidth=1.6)
+        ax_top.set_ylabel("Amplitude", color="red")
+        ax_top.tick_params(axis="y", labelcolor="red")
+        ax_top.grid(True, linestyle="--", alpha=0.3)
+        ax_top.set_title("Amplitude + DTMF Detection")
+
+        # ============================================================
+        #  BOTTOM PLOT: Amplitude + ALL THRESHOLDS
+        # ============================================================
+
+        # Always draw amplitude FIRST
+        ax_bottom.plot(t, envelope, color="red", linewidth=1.4)
+        ax_bottom.set_ylabel("Amplitude", color="red")
+        ax_bottom.tick_params(axis="y", labelcolor="red")
+        ax_bottom.grid(True, linestyle="--", alpha=0.3)
+
+        # Threshold plot definitions
+        plots = [
+            (snrplot,   "SNR",          "blue"),
+            (sepdpplot, "Separation dB","green"),
+            (domdbplot, "Dominant dB",  "purple"),
+            (twistplot, "Twist (dB)",   "cyan"),
+        ]
+
+        # Distance between right-side axes
+        offset = 0
+
+        for plot_data, label, color in plots:
+
+            x_blocks = plot_data["x"] * block_sec
             y_values = plot_data["y"]
 
-            x_blocks_sec = x_blocks * block_sec
+            th_line  = plot_data.get("thresholdline", None)
+            neg_line = plot_data.get("neg_line", None)
+            pos_line = plot_data.get("pos_line", None)
 
-            ax_new = ax1.twinx()
-            ax_new.spines["right"].set_position(("outward", 60 * (i + 1)))
+            # Create new axis on right, spaced outward
+            ax_new = ax_bottom.twinx()
+            ax_new.spines["right"].set_position(("outward", 70 + offset))
+            offset += 70
 
-            bar_width = block_sec * 0.9
-
+            # Bars
             ax_new.bar(
-                x_blocks_sec,
-                y_values,
-                width=bar_width,
-                color=colors[i],
+                x_blocks, y_values,
+                width=block_sec * 0.9,
+                color=color,
                 edgecolor="black",
-                alpha=0.4,
-                align="center",
-                label=labels[i]
+                alpha=0.28
             )
 
-            ax_new.set_ylabel(labels[i], color=colors[i])
-            ax_new.tick_params(axis="y", labelcolor=colors[i])
+            # Thin dashed threshold lines
+            if th_line is not None:
+                ax_new.plot(x_blocks, th_line, color=color,
+                            linestyle="--", linewidth=1.0)
 
-            ax_list.append(ax_new)
+            if neg_line is not None:
+                ax_new.plot(x_blocks, neg_line, color=color,
+                            linestyle="--", linewidth=1.0)
 
-        ax1.set_xlabel("Time (seconds)")
-        ax1.set_xlim(0, max(t.max(), x_blocks_sec.max() + block_sec))
+            if pos_line is not None:
+                ax_new.plot(x_blocks, pos_line, color=color,
+                            linestyle="--", linewidth=1.0)
 
-        plt.title("Amplitude and All Thresholds Plot")
+            # Label axis
+            ax_new.set_ylabel(label, color=color)
+            ax_new.tick_params(axis="y", labelcolor=color)
+
+        # ------------------------------------------------------------
+        ax_bottom.set_xlabel("Time (seconds)")
+        ax_bottom.set_xlim(0, t.max())
+        ax_bottom.set_title("Amplitude + SNR + Separation dB + Dominant dB + Twist dB")
+
         plt.tight_layout()
-
-
-
-
 
