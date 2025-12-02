@@ -1,6 +1,7 @@
 # dtmf_detector.py
 import numpy as np
 import argparse
+import os
 from SignalProc.BandpassFilter import BandPassFilter
 from SignalProc.Goertzel import GoertzelAlgorithm
 from SignalProc.AudioSampling import AudioSampler
@@ -307,9 +308,14 @@ class DTMFDetector:
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
                     plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
-                    #plotter.plot_amplitude_and_all_thresholds(amplitude_plot, barplotDTMF, barplotSNR, barplotSepDB, barplotDomDB, barplotTwist, block_ms=block_ms)
                     
-                    plt.show()
+                    # Save plots to "Audio_plots" directory
+                    #base_dir = os.path.dirname(os.path.abspath(__file__))
+                    #save_folder = os.path.join(base_dir, "Audio_plots")
+                    #os.makedirs(save_folder, exist_ok=True)
+
+                    #save_path = os.path.join(save_folder, "combined_plot.png")
+                    #plt.savefig(save_path, dpi=300, bbox_inches='tight')
                     
                 return "".join(digits)
             
