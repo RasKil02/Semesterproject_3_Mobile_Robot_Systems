@@ -7,6 +7,7 @@ from SignalProc.Goertzel import GoertzelAlgorithm
 from SignalProc.AudioSampling import AudioSampler
 from SignalProc.Plotting import Plotting
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 # --- DTMF opsætning ---
 FREQS_LOW  = (697, 770, 852, 941)
@@ -303,19 +304,39 @@ class DTMFDetector:
                     barplotDomDB = plotter.barplot_of_threshold(dom_db_values, self.dom_db)
                     barplotTwist = plotter.barplot_of_twist(twist_values, self.twist_neg_db, self.twist_pos_db)
                     
-                    plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude Plot", block_ms=block_ms)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude Plot", block_ms=block_ms)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude Plot", block_ms=block_ms)
-                    plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
-                    
-                    # Save plots to "Audio_plots" directory
-                    #base_dir = os.path.dirname(os.path.abspath(__file__))
-                    #save_folder = os.path.join(base_dir, "Audio_plots")
-                    #os.makedirs(save_folder, exist_ok=True)
+                    thresholdplot = plt.figure(figsize=(18, 25))  # one big figure
 
-                    #save_path = os.path.join(save_folder, "combined_plot.png")
-                    #plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                    plt.subplot(5, 1, 1)
+                    plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
+
+                    plt.subplot(5, 1, 2)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude", "orange", block_ms=block_ms)
+
+                    plt.subplot(5, 1, 3)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude", "green", block_ms=block_ms)
+
+                    plt.subplot(5, 1, 4)
+                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude", "purple", block_ms=block_ms)
+
+                    plt.subplot(5, 1, 5)
+                    plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
+
+                    plt.tight_layout(rect=[0, 0, 1, 0.97])
+
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+                    save_folder = os.path.join(base_dir, "Audio_plots")
+                    os.makedirs(save_folder, exist_ok=True)
+
+                    # Create timestamp (example: 2025-03-03_09-45-12)
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+                    # Compose filename
+                    save_path = os.path.join(save_folder, f"thresholdplot_{timestamp}.png")
+
+                    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                    print(f"Saved plot to: {save_path}")
+
+                    plt.show()
                     
                 return "".join(digits)
             
@@ -342,6 +363,7 @@ class DTMFDetector:
             amplitudes.extend(block.tolist())
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
+            
             t_ms += block_ms
             block_symbols.append(sym if sym is not None else " ")
 

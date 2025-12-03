@@ -80,9 +80,6 @@ class Plotting:
         block_sec = block_ms / 1000.0
         x_blocks_sec = x_blocks * block_sec
 
-        # ---------- Create the combined plot ----------
-        plt.figure(figsize=(18, 6))
-
         # LEFT AXIS: amplitude envelope
         ax1 = plt.gca()
         ax1.plot(t, envelope, color="red", linewidth=1.8)
@@ -125,7 +122,7 @@ class Plotting:
         plt.title("Amplitude Envelope + DTMF Detection (Overlayed)")
         plt.tight_layout()
 
-    def plot_amplitude_and_thresholds(self, amplitudeplot, thresholdplot, title, block_ms=40):
+    def plot_amplitude_and_thresholds(self, amplitudeplot, thresholdplot, title, colorofbars, block_ms=40):
 
         # ----- Extract amplitude data -----
         t = amplitudeplot['t']
@@ -138,10 +135,7 @@ class Plotting:
 
         block_sec = block_ms / 1000.0
         x_blocks_sec = x_blocks * block_sec
-
-        # ---------- Create figure ----------
-        plt.figure(figsize=(18, 6))
-
+        
         # LEFT AXIS: amplitude envelope
         ax1 = plt.gca()
         ax1.plot(t, envelope, color="red", linewidth=1.4)
@@ -159,7 +153,7 @@ class Plotting:
             x_blocks_sec,
             y_values,
             width=bar_width,
-            color="blue",
+            color=colorofbars,
             edgecolor="black",
             alpha=0.6,
             align="center",
@@ -176,8 +170,15 @@ class Plotting:
             label="Threshold"
         )
 
-        ax2.set_ylabel("Threshold-measured value", color="blue")
-        ax2.tick_params(axis="y", labelcolor="blue")
+        if title == "SNR and Amplitude":
+            ax2.set_ylabel("SNR (dB)", color="blue")
+            ax2.tick_params(axis="y", labelcolor="blue")
+        elif title == "Sep_db and Amplitude":
+            ax2.set_ylabel("Sep (dB)", color="blue")
+            ax2.tick_params(axis="y", labelcolor="blue")
+        elif title == "Dom_db and Amplitude":
+            ax2.set_ylabel("Dom (dB)", color="blue")
+            ax2.tick_params(axis="y", labelcolor="blue")
 
         Rmin, Rmax = ax2.get_ylim()
         if Rmin < 0:
@@ -203,8 +204,6 @@ class Plotting:
         block_sec = block_ms / 1000.0
         x_blocks_sec = x_blocks * block_sec
 
-        plt.figure(figsize=(20,6))
-
         # LEFT AXIS: amplitude
         ax1 = plt.gca()
         ax1.plot(t, envelope, color="red", linewidth=1.4)
@@ -217,7 +216,7 @@ class Plotting:
         ax2.bar(
             x_blocks_sec, y_values,
             width=block_sec * 0.9,
-            color="blue", edgecolor="black",
+            color="brown", edgecolor="black",
             alpha=0.6
         )
 
