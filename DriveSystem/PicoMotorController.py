@@ -6,7 +6,7 @@ class PicoMotorController:
     Sends simple one-byte commands (e.g., b"1") to the Pico via USB serial.
     """
 
-    def __init__(self, port="/dev/ttyACM0", baud=115200):
+    def __init__(self, port="/dev/serial/by-id/usb-MicroPython_Board_in_FS_mode_e6613008e37c6f34-if00", baud=115200):
         self.port = port
         self.baud = baud
 
