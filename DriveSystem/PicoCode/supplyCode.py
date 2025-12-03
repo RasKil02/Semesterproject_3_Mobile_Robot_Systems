@@ -11,8 +11,10 @@ def supplyMotor(supplyID: int, duty: int = int(0.4 * 1023), duration: float = 2.
         print('Invalid supply number')
         return
 
+    pin = supplyID+15
+    
     # Initialize PWM on the selected pin
-    pwm = PWM(Pin(supplyID))
+    pwm = PWM(Pin(pin))
     pwm.freq(1000)  # 1 kHz typical PWM frequency
 
     print("Activating supply motor", supplyID)
