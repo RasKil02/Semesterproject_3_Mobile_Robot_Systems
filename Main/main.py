@@ -1,3 +1,13 @@
+import sys
+import os
+
+# Find mappen hvor dette script kører fra (ProtocolSpeaker_connection)
+current_dir = os.path.dirname(__file__)  
+# Gå et niveau op til projektroden (Semesterproject_3_Mobile_Robot_Systems)
+project_root = os.path.abspath(os.path.join(current_dir, '..'))  
+# Tilføj projektroden til sys.path så du kan importere søskende mapper som DriveSystem
+sys.path.append(project_root)
+
 import numpy as np
 import sounddevice as sd
 from ProtocolSpeaker_connection.Protocol import Protocol
