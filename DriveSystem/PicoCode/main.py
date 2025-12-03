@@ -28,13 +28,25 @@ def supplyMotor(supplyID: int, duty: int = int(0.4 * 1023), duration: float = 2.
     print("Deactivating supply motor", supplyID)
 
 def main():
+    #sæt pin 21 high
+    # Vælg en pin, f.eks. GPIO 15
+    pin21 = Pin(21, Pin.OUT)
+
+    # Sæt pin high (3.3V)
+    pin21.value(1)
     uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
 
     while True:
         if uart.any():
-            data = uart.read().decode()
-            print("Received:", data)
-        supplyMotor(data)
+            data = uart.read(1)  # læs én byte
+            if data:
+                supply_id_str = data.decode().strip()  # decode til streng, fjern evt. whitespace
+                print("Received:", supply_id_str)
+                try:
+                    supply_id = int(supply_id_str)  # konverter til int
+                    supplyMotor(supply_id)          # kør motor med supply_id
+                except ValueError:
+                    print("Invalid data received:", supply_id_str)
 
 
 

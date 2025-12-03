@@ -17,6 +17,9 @@ class PicoMotorController:
         time.sleep(2)  # allow Pico reboot
 
     def _send_raw(self, code: str):
+        print("Entered send raw")
+        print("Code is", code)
+
         """Send a chunk of MicroPython code to the Pico and execute it."""
         self.ser.write(b'\x01')  # Enter RAW REPL (CTRL-A)
         time.sleep(0.03)
