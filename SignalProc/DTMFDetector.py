@@ -335,8 +335,6 @@ class DTMFDetector:
 
                     plt.savefig(save_path, dpi=300, bbox_inches='tight')
                     print(f"Saved plot to: {save_path}")
-
-                    plt.show()
                     
                 return "".join(digits)
             
