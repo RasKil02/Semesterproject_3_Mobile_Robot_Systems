@@ -89,6 +89,8 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
 
         print("Dropping supply:", supplies)
         picosender.send_supply_id(supplies)
+        ack = picosender.read_ack()
+        print("Pico replied:", ack)
       
 
 

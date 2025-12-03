@@ -20,3 +20,7 @@ class PicoMotorController:
 
     def close(self):
         self.ser.close()
+
+    def read_ack(self):
+        return self.ser.readline().decode().strip()
+
