@@ -1,4 +1,6 @@
 # Class for plotting different stages of the signals
+import matplotlib
+matplotlib.use("Agg")  # Add this
 import matplotlib.pyplot as plt
 from scipy.signal import sosfreqz
 import numpy as np
