@@ -14,6 +14,7 @@ from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
 from DriveSystem.NotUsed.MoveTest import MoveTest
 from DriveSystem.RoutePlanner import RoutePlanner
+from DriveSystem.PicoMotorController import PicoMotorController
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
 from SignalProc.AudioSampling import AudioSampler

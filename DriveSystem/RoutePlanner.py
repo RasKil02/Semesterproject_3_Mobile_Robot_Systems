@@ -3,6 +3,8 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
+from DriveSystem.PicoMotorController import PicoMotorController
+picosender = PicoMotorController()
 #from machine import Pin
 import serial
 import time
@@ -86,7 +88,10 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             return
 
         print("Dropping supply:", supplies)
-        #self.send_data(supplies)
+        picosender.send_supply_id(supplies)
+        ack = picosender.read_ack()
+        print("Pico replied:", ack)
+      
 
 
     # Executes the full route: drive out, rotate, drop supplies, return home
@@ -131,13 +136,3 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             self.executeRoute(supplies, speed, durations[dest], rotation_speed)
         else:
             self.get_logger().warn('Unknown Destination')
-
-    def send_data(self, data):
-  
-        if isinstance(data, int):
-            data = str(data)  # konverter int -> string
-
-        self.ser.write(data.encode())
-        print("Sent:", data)
-
-
