@@ -341,8 +341,7 @@ class DTMFDetector:
             # For amplitude plots (samme som ny)
             amplitudes.extend(block.tolist())
 
-            # 🟢 KORREKT unpack
-            sym, out = self.analyze_block(block, stabilizer, t_ms)
+            sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
             block_symbols.append(sym if sym is not None else " ")
 
