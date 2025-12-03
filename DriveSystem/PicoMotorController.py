@@ -31,41 +31,6 @@ class PicoMotorController:
         time.sleep(0.05)
         return self.ser.read(5000).decode(errors="ignore")
 
-    def _install_motor_code(self):
-        """Load PWM motor driver code into Pico RAM."""
-        code = """
-        from machine import Pin, PWM
-
-        motor1 = PWM(Pin(15))
-        motor2 = PWM(Pin(16))
-
-        motor1.freq(1000)
-        motor2.freq(1000)
-
-        def set_m1(pct):
-            motor1.duty_u16(int(65535 * max(0, min(1, pct))))
-
-        def set_m2(pct):
-            motor2.duty_u16(int(65535 * max(0, min(1, pct))))
-
-        print("Pico motor PWM ready.")
-        """
-        print(self._send_raw(code))
-
-    # -------------------------
-    # Public control methods
-    # -------------------------
-
-    def set_motor1(self, percent: float):
-        """Set Motor 1 speed from 0.0 to 1.0."""
-        cmd = f"set_m1({percent})"
-        self._send_raw(cmd)
-
-    def set_motor2(self, percent: float):
-        """Set Motor 2 speed from 0.0 to 1.0."""
-        cmd = f"set_m2({percent})"
-        self._send_raw(cmd)
-
     def stop_all(self):
         """Stop both motors."""
         self._send_raw("set_m1(0); set_m2(0)")
@@ -74,15 +39,3 @@ class PicoMotorController:
         """Close serial connection."""
         self.stop_all()
         self.ser.close()
-
-    # -------------------------
-    # Optional helper
-    # -------------------------
-
-    def sweep_test(self):
-        """Quick test of both motors."""
-        for pct in [0, 0.25, 0.5, 0.75, 1.0, 0]:
-            print(f"Sweeping to {pct*100:.0f}%")
-            self.set_motor1(pct)
-            self.set_motor2(pct)
-            time.sleep(1)
