@@ -16,9 +16,6 @@ class PicoMotorController:
         self.ser = serial.Serial(port, baud, timeout=1)
         time.sleep(2)  # allow Pico reboot
 
-        # Install motor PWM code on Pico
-        self._install_motor_code()
-
     def _send_raw(self, code: str):
         """Send a chunk of MicroPython code to the Pico and execute it."""
         self.ser.write(b'\x01')  # Enter RAW REPL (CTRL-A)
