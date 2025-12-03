@@ -16,20 +16,9 @@ class PicoMotorController:
         self.ser = serial.Serial(port, baud, timeout=1)
         time.sleep(2)  # allow Pico reboot
 
-    def _send_raw(self, code: str):
-        print("Entered send raw")
-        print("Code is", code)
+    def send_supply_id(self, supply_id: int):
+        self.ser.write(str(supply_id).encode())
 
-        """Send a chunk of MicroPython code to the Pico and execute it."""
-        self.ser.write(b'\x01')  # Enter RAW REPL (CTRL-A)
-        time.sleep(0.03)
-
-        cleaned = textwrap.dedent(code).strip() + "\r"
-        self.ser.write(cleaned.encode("utf-8"))
-        self.ser.write(b'\x04')  # Execute (CTRL-D)
-
-        time.sleep(0.05)
-        return self.ser.read(5000).decode(errors="ignore")
 
     def stop_all(self):
         """Stop both motors."""
