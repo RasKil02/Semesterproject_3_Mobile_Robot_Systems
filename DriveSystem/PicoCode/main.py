@@ -13,9 +13,11 @@ def supplyMotor(supplyID: int, duty: int = int(0.4 * 65535), duration: float = 2
         print('Invalid supply number')
         return
 
-    pin = supplyID + 15  # Pins 15,16,17,18 for motors
+    pin_num = supplyID + 15  # Pins 15,16,17,18 for motors
+    pin_obj = Pin(pin_num, Pin.OUT)
 
-    pwm = PWM(Pin(pin))
+    # Start PWM
+    pwm = PWM(pin_obj)
     pwm.freq(1000)
 
     print("Activating supply motor", supplyID)
@@ -23,8 +25,13 @@ def supplyMotor(supplyID: int, duty: int = int(0.4 * 65535), duration: float = 2
 
     time.sleep(duration)
 
+    # Turn off PWM
     pwm.duty_u16(0)
     pwm.deinit()
+
+    pin_obj = Pin(pin_num, Pin.OUT)
+    pin_obj.value(0)
+
     print("Deactivating supply motor", supplyID)
 
 
@@ -32,13 +39,13 @@ def send_ack(supplyID):
     """Send confirmation back to the Pi."""
     msg = f"received {supplyID}\n"
     sys.stdout.write(msg)
-    sys.stdout.flush()   # ensure it is sent immediately
+    sys.stdout.flush()
 
 
 def main():
-    # LED for debugging
-    pin22 = Pin(22, Pin.OUT)
-    pin22.value(1)
+    # Debug LED on pin 22
+    pin18 = Pin(18, Pin.OUT)
+    pin18.value(1)
 
     print("Pico ready. Listening on USB serial...")
 
@@ -51,10 +58,8 @@ def main():
 
                 supply_id = int(supply_id_str)
 
-                # Run the motor
                 supplyMotor(supply_id)
 
-                # Send confirmation back to the Pi
                 send_ack(supply_id)
 
             except Exception as e:
