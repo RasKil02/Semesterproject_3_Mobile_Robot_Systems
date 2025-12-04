@@ -130,11 +130,17 @@ class Protocol:
                 time.sleep(0.28)
 
     # generate command with set_command. Runs checksum and gets Checksum Remainder.
-    def play_dtmf_command_checksum(self, command=None):    
+    def play_dtmf_command_checksum(self, command=None, resend=False):    
         if command is None:
             command = self.set_command()
 
-        seqNr = self.set_sequence_number()
+        if resend == False:
+            seqNr = self.set_sequence_number()
+
+        if resend == True:
+            seqNr = self.seqNr  # Brug den tidligere sekvensnummer ved genafsendelse
+
+        command = self.command  
         checksumString = self.calculate_crc_remainder(self.convert4BitCommandTo12BitString(command))
         print("Checksum CRC:", checksumString)
 
@@ -191,6 +197,10 @@ class Protocol:
     # Calculates a new CRC Check for a command bit string on 12 bits and a 3 bit CRC string.
     # Used on the robot to check if the received command is valid. Should give (000) if valid.
     def Check_CRC(self, received_bitstring, poly_bitstring="1011"):
+        if received_bitstring != 15:
+            print("Received bitstring must be 15 bits long but was ", len(received_bitstring))
+            return None, False
+        
         polynomial = list(poly_bitstring)
         polynomial_length = len(poly_bitstring)
         input_padded = list(received_bitstring)
@@ -227,12 +237,13 @@ class Protocol:
     
     # decode string from readcommand and use Check_CRC
     def decode_and_check_crc(self, cmd_with_startbits):
-
         # Udpak checksum
         checksum_digit = cmd_with_startbits[6]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
         command = cmd_with_startbits[2:7]
+
+        seqNrDigit = cmd_with_startbits[7]
 
         # Konverter til 3-bit binær streng
         bitstring = self.decimal_string_to_3bit_binary_string(command)
@@ -244,4 +255,4 @@ class Protocol:
         print("Is CRC valid?", is_valid)
 
         # Returnér så du kan bruge det direkte i main
-        return command, bitstring, is_valid, remainder, checksum_digit
+        return command, bitstring, is_valid, remainder, checksum_digit, seqNrDigit
