@@ -2,6 +2,10 @@
 import numpy as np
 import argparse
 import os
+
+import matplotlib
+matplotlib.use("Agg")
+
 from SignalProc.BandpassFilter import BandPassFilter
 from SignalProc.Goertzel import GoertzelAlgorithm
 from SignalProc.AudioSampling import AudioSampler
