@@ -9,6 +9,7 @@ class Protocol:
         self.supplyAdress = None
         self.start = '*'
         self.stop = '#'
+        self.seqNr = None
         self.command = None # Command to be saved for resending
 
     # Set command by asking user for room and supply addresses. That number is converted to DTMF number format fx 1 -> 01
@@ -73,6 +74,16 @@ class Protocol:
         startbit2 = '#'
         self.startCommand = f"{startbit}{startbit2}"
         return self.startCommand
+    
+    def set_sequence_number(self):
+        if self.seqNr is None:
+            self.seqNr = '0'
+        elif self.seqNr == '0':
+            self.seqNr = '1'
+        else:  # self.seqNr == '1'
+            self.seqNr = '0'
+        
+        return self.seqNr
 
     # Translate a single number to its corresponding DTMF frequencies
     def translateNumberToDTMFfreq(self, number):
@@ -122,7 +133,8 @@ class Protocol:
     def play_dtmf_command_checksum(self, command=None):    
         if command is None:
             command = self.set_command()
-    
+
+        seqNr = self.set_sequence_number()
         checksumString = self.calculate_crc_remainder(self.convert4BitCommandTo12BitString(command))
         print("Checksum CRC:", checksumString)
 
@@ -131,7 +143,7 @@ class Protocol:
         print("Checksum DTMF:", checkSumDTMF)
 
         startCommand = self.set_startcommand()  # Kald funktionen korrekt
-        self.play_DTMF_command(startCommand + command + checkSumDTMF)
+        self.play_DTMF_command(startCommand + command + checkSumDTMF + seqNr)
 
 
     # Converts a decimal string to a 3-bit binary string for each digit. Eksempel 01 -> 000001

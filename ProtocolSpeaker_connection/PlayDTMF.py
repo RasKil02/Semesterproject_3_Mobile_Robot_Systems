@@ -37,20 +37,30 @@ def readCommandDuration(duration):
 
 def main():
     while True:
+        NACK = '0'
+        ACK = '1'
         proto = Protocol()
         proto.play_dtmf_command_checksum()
 
         while True:
             print("Waiting for possible NACK response\n")
-            NACKCommand = readCommandDuration(10)
-            print("Received NACK command:", NACKCommand)
+            FeedbackCommand = readCommandDuration(10)
+            print("Received NACK command:", FeedbackCommand)
 
-            if (not NACKCommand):
+            if FeedbackCommand == NACK:
+                print("NACK received. Resending command...\n")
+                proto.play_dtmf_command_checksum(proto.command)
+
+            if FeedbackCommand == ACK:
+                print("ACK received. Proceeding to next command\n")
+                break
+
+            elif (not FeedbackCommand):
                 print("No command NACK received.")
                 print("Continuing to next command\n")
                 break
 
-            if (NACKCommand != None):
+            if (FeedbackCommand != None):
                 proto.play_dtmf_command_checksum(proto.command)
         
         sd.stop()
