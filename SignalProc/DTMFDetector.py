@@ -154,8 +154,7 @@ class DTMFDetector:
                  dom_db: float = 12.0,       # dominans-tærskel
                  snr_db: float = 12.0,       # SNR-tærskel
                  twist_pos_db: float = +8.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -4.0,
-                 min_tone_ms: float = 0):  # negativ twist grænse (col > row)
+                 twist_neg_db: float = -4.0):  # negativ twist grænse (col > row)
 
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
@@ -176,9 +175,6 @@ class DTMFDetector:
         self.snr_db  = float(snr_db)
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
-        self.tone_start = None
-        self.last_candidate = None
-        self.min_tone_ms = float(min_tone_ms)
 
     def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
                         sep_db_values, dom_db_values, twist_values):
@@ -283,27 +279,6 @@ class DTMFDetector:
         snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
 
         good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
-        
-        # --- Minimum tone duration check (persistent) ---
-        candidate = (lf, hf) if good else None
-
-        if candidate != self.last_candidate:
-            self.tone_start = now_ms  # new tone or noise → reset timer
-
-        self.last_candidate = candidate
-
-        if good and (now_ms - self.tone_start) < self.min_tone_ms:
-            # Tone hasn't lasted long enough → treat as noise
-            return "?", None, {
-            "snr_low": snr_low_db,
-            "snr_high": snr_high_db,
-            "min_db_low": l_abs_db - blk_db,
-            "min_db_high": h_abs_db - blk_db,
-            "sep_low": l_abs_db - l2_db,
-            "sep_high": h_abs_db - h2_db,
-            "dom_low": l_dom_db,
-            "dom_high": h_dom_db,
-            "twist": twist}
 
         sym = LUT.get((lf, hf), "?") if good else "?"
 
