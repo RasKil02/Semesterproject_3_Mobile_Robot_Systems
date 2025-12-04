@@ -155,7 +155,7 @@ class DTMFDetector:
                  snr_db: float = 12.0,       # SNR-tærskel
                  twist_pos_db: float = +8.0,   # positiv twist grænse (row > col)
                  twist_neg_db: float = -4.0,
-                 min_tone_ms: float = 40):  # negativ twist grænse (col > row)
+                 min_tone_ms: float = 20):  # negativ twist grænse (col > row)
 
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
