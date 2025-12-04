@@ -42,7 +42,7 @@ class DigitStabilizer:
       - gap_ms : krævet stilhed før næste symbol (hindrer dobbeltskud)
     Tilstande: IDLE -> CANDIDATE -> LOCKED -> GAP
     """
-    def __init__(self, hold_ms=130, miss_ms=65, gap_ms=78):
+    def __init__(self, hold_ms=130, miss_ms=75, gap_ms=78):
         self.hold_ms = float(hold_ms)
         self.miss_ms = float(miss_ms)
         self.gap_ms  = float(gap_ms)
