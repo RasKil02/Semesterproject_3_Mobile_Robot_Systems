@@ -176,6 +176,66 @@ class DTMFDetector:
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
 
+    def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
+                        sep_db_values, dom_db_values, twist_values):
+
+        try:
+            # Base directory = directory of THIS file
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # Create / find the subfolder
+            save_folder = os.path.join(base_dir, "Audio_plotting_txtfiles")
+            os.makedirs(save_folder, exist_ok=True)
+
+            # Create filename with timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            filename = os.path.join(save_folder, f"dtmf_debug_{timestamp}.txt")
+
+            with open(filename, "w") as f:
+
+                f.write("=== DTMF DEBUG DATA ===\n")
+                f.write(f"Detected digits: {''.join(digits)}\n")
+
+                f.write("\n--- Threshold Settings ---\n")
+                f.write(f"min_db threshold: {self.min_db}\n")
+                f.write(f"sep_db threshold: {self.sep_db}\n")
+                f.write(f"dom_db threshold: {self.dom_db}\n")
+                f.write(f"snr_db threshold: {self.snr_db}\n")
+                f.write(f"twist_pos_db: {self.twist_pos_db}\n")
+                f.write(f"twist_neg_db: {self.twist_neg_db}\n")
+
+                f.write("\n--- Collected Metrics ---\n")
+
+                f.write("\nAmplitude samples:\n")
+                for a in amplitudes:
+                    f.write(f"{a}\n")
+
+                f.write("\nDetected symbols per block:\n")
+                for s in block_symbols:
+                    f.write(f"{s}\n")
+
+                f.write("\nSNR values:\n")
+                for v in SNR_values:
+                    f.write(f"{v}\n")
+
+                f.write("\nsep_db values:\n")
+                for v in sep_db_values:
+                    f.write(f"{v}\n")
+
+                f.write("\ndom_db values:\n")
+                for v in dom_db_values:
+                    f.write(f"{v}\n")
+
+                f.write("\ntwist values:\n")
+                for v in twist_values:
+                    f.write(f"{v}\n")
+
+            print(f"Saved debug file: {filename}")
+
+        except Exception as e:
+            print("Error saving debug file:", e)
+
+
     # Analyze audio data for DTMF digits
     def analyze_block(self, seg: np.ndarray, stabilizer, now_ms: float):
           
@@ -297,49 +357,12 @@ class DTMFDetector:
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
-            if len(digits) == 7:
+            if len(digits) == 8:
                 # Convert amplitudes to numpy array for plotting
-                amplitudes_arr = np.array(amplitudes, dtype=np.float32)
-                if plot == True:
-                    amplitude_plot = plotter.plot_signal_amplitude(amplitudes_arr, fs=self.fs)
-                    barplotDTMF = plotter.barplot_of_DTMFtones(block_symbols)
-                    barplotSNR = plotter.barplot_of_threshold(SNR_values, self.snr_db)
-                    barplotSepDB = plotter.barplot_of_threshold(sep_db_values, self.sep_db)
-                    barplotDomDB = plotter.barplot_of_threshold(dom_db_values, self.dom_db)
-                    barplotTwist = plotter.barplot_of_twist(twist_values, self.twist_neg_db, self.twist_pos_db)
-                    
-                    thresholdplot = plt.figure(figsize=(18, 25))  # one big figure
-
-                    plt.subplot(5, 1, 1)
-                    plotter.plot_amplitude_and_DTMFtones(barplotDTMF, amplitude_plot, block_ms=block_ms)
-
-                    plt.subplot(5, 1, 2)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSNR, "SNR and Amplitude", "orange", block_ms=block_ms)
-
-                    plt.subplot(5, 1, 3)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotSepDB, "Sep_db and Amplitude", "green", block_ms=block_ms)
-
-                    plt.subplot(5, 1, 4)
-                    plotter.plot_amplitude_and_thresholds(amplitude_plot, barplotDomDB, "Dom_db and Amplitude", "purple", block_ms=block_ms)
-
-                    plt.subplot(5, 1, 5)
-                    plotter.plot_amplitude_and_twist(amplitude_plot, barplotTwist, block_ms=block_ms)
-
-                    plt.tight_layout(rect=[0, 0, 1, 0.97])
-
-                    base_dir = os.path.dirname(os.path.abspath(__file__))
-                    save_folder = os.path.join(base_dir, "Audio_plots")
-                    os.makedirs(save_folder, exist_ok=True)
-
-                    # Create timestamp (example: 2025-03-03_09-45-12)
-                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-                    # Compose filename
-                    save_path = os.path.join(save_folder, f"thresholdplot_{timestamp}.png")
-
-                    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-                    print(f"Saved plot to: {save_path}")
-                    
+                
+                # Save plotting data to a txt file
+                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
+                
                 return "".join(digits)
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
