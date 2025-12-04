@@ -124,7 +124,35 @@ def plot_allplots_andsave_to_folder(amplitudes, block_symbols, SNR_values, sep_d
     print(f"Saved plot to: {save_path}")
     
 if __name__ == "__main__":
-    amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values, \
-    snr_db, sep_db, dom_db, twist_neg_db, twist_pos_db = read_plotting_txt("SignalProc/Audio_plotting_txtfiles/dtmf_debug_2025-12-04_09-45-59.txt")
-    plot_allplots_andsave_to_folder(amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values, block_ms=40,
-                                    snr_db=snr_db, sep_db=sep_db, dom_db=dom_db, twist_neg_db=twist_neg_db, twist_pos_db=twist_pos_db, fs=44100)
+
+    # Build path to txt files
+    signalproc_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    txt_folder = os.path.join(signalproc_dir, "SignalProc", "Audio_plotting_txtfiles")
+
+    # Loop through all .txt files in the folder
+    for filename in os.listdir(txt_folder):
+        if not filename.endswith(".txt"):
+            continue
+
+        full_path = os.path.join(txt_folder, filename)
+        print(f"\nProcessing: {full_path}")
+
+        # Read data from txt file
+        (
+            amplitudes, block_symbols, SNR_values,
+            sep_db_values, dom_db_values, twist_values,
+            snr_db, sep_db, dom_db, twist_neg_db, twist_pos_db
+        ) = read_plotting_txt(full_path)
+
+        # Generate and save plots
+        plot_allplots_andsave_to_folder(
+            amplitudes, block_symbols, SNR_values,
+            sep_db_values, dom_db_values, twist_values,
+            block_ms=40,   # whatever your detector block is
+            snr_db=snr_db,
+            sep_db=sep_db,
+            dom_db=dom_db,
+            twist_neg_db=twist_neg_db,
+            twist_pos_db=twist_pos_db,
+            fs=44100
+        )
