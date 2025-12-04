@@ -145,9 +145,9 @@ class DTMFDetector:
                  fs: int = 44100,
                  block_ms: float = 40.0,
                  hop_ms: float   = 10.0,
-                 lowcut: float   = 620.0,
-                 highcut: float  = 1700.0,
-                 bp_order: int   = 6,
+                 lowcut: float   = 650.0,
+                 highcut: float  = 1680.0,
+                 bp_order: int   = 4,
                  # Tærskler
                  min_db: float = -20.0,     # minimum absolut db
                  sep_db: float = 10.0,       # separations-tærskel
