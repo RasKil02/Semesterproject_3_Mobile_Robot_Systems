@@ -150,11 +150,11 @@ class DTMFDetector:
                  bp_order: int   = 4,
                  # Tærskler
                  min_db: float = -20.0,     # minimum absolut db
-                 sep_db: float = 10.0,       # separations-tærskel
+                 sep_db: float = 7.0,       # separations-tærskel
                  dom_db: float = 12.0,       # dominans-tærskel
                  snr_db: float = 12.0,       # SNR-tærskel
-                 twist_pos_db: float = +8.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -4.0):  # negativ twist grænse (col > row)
+                 twist_pos_db: float = +5.0,   # positiv twist grænse (row > col)
+                 twist_neg_db: float = -5.0):  # negativ twist grænse (col > row)
 
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
