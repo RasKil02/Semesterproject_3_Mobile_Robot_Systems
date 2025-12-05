@@ -2,10 +2,10 @@ import sys
 import os
 
 # Find mappen hvor dette script kører fra (ProtocolSpeaker_connection)
-current_dir = os.path.dirname(__file__)  
+current_dir = os.path.dirname(__file__)
 
 # Gå et niveau op til projektroden (Semesterproject_3_Mobile_Robot_Systems)
-project_root = os.path.abspath(os.path.join(current_dir, '..'))  
+project_root = os.path.abspath(os.path.join(current_dir, '..'))
 
 # Tilføj projektroden til sys.path så du kan importere søskende mapper som DriveSystem
 sys.path.append(project_root)
@@ -33,6 +33,7 @@ proto = Protocol()
 newCommandEvent = threading.Event()
 control_queue = queue.Queue()
 
+
 def readCommandDuration(duration, sampler):
 
     # --- Create detector ---
@@ -47,6 +48,7 @@ def readCommandDuration(duration, sampler):
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
     return cmd
+
 
 def readCommand(sampler):
 
@@ -63,6 +65,7 @@ def readCommand(sampler):
     print(cmd if cmd else "(none)")
     return cmd
 
+
 def runRobotWithRoutePlanner(command: str):
     rclpy.init()
     node = RoutePlanner()
@@ -75,6 +78,7 @@ def runRobotWithRoutePlanner(command: str):
         node.stop()
         node.destroy_node()
         rclpy.shutdown()
+
 
 def main():
     nack_command = "A"
@@ -90,6 +94,7 @@ def main():
         if retransmit:
             if command[7] == seqNrDigit:
                 print("Expected new command but received old command. Sending ACK")
+                sampler = AudioSampler()
                 sampler.close()
                 sd.stop()
                 proto.play_DTMF_command(ack_command, 48000)
@@ -101,6 +106,7 @@ def main():
 
         if not is_valid:
             print("Checksum invalid → sending NACK")
+            sampler = AudioSampler()
             sampler.close()
             sd.stop()
             proto.play_DTMF_command(nack_command, 48000)
@@ -108,6 +114,7 @@ def main():
             continue
 
         print("Checksum valid → sending ACK")
+        sampler = AudioSampler()
         sampler.close()
         sd.stop()
         proto.play_DTMF_command(ack_command, 48000)
@@ -119,6 +126,7 @@ def main():
         runRobotWithRoutePlanner(bitstring)
 
         sampler = AudioSampler()
+        continue
 
 
 if __name__ == "__main__":
@@ -126,5 +134,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Exiting program.")
-
-
