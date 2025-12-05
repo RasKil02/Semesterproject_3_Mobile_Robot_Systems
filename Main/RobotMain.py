@@ -13,9 +13,9 @@ sys.path.append(project_root)
 import numpy as np
 import sounddevice as sd
 
-sd.default.device = (1, None)      # Use USB sound card for output
-sd.default.channels = 2            # Your USB device requires stereo
-sd.default.samplerate = 48000      # Safe working sample rate
+sd.default.device = (1, 1)
+sd.default.channels = (2, 1)    # 2 output channels (stereo), 1 input channel (mono)
+sd.default.samplerate = 48000
 
 from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
@@ -95,7 +95,7 @@ def main():
         if retransmit == True:
             if command[7] == seqNrDigit:
                     print("Expected new command but received old command. Sending ACK to request new command")
-                    proto.play_DTMF_command(ack_command) # Plays ACK to request new command
+                    proto.play_DTMF_command(ack_command, 41100) # Plays ACK to request new command
                     continue
 
         # Dekod og check CRC
