@@ -317,7 +317,7 @@ class DTMFDetector:
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
-            
+            """
             # --- PLOTTING DATA COLLECTION ---
             # Append block samples to amplitudes list if 2 seconds have passed
             if t_ms >= 2000.0:
@@ -329,7 +329,7 @@ class DTMFDetector:
                 dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
                 twist_values.append(metrics['twist'])
             # -----------------------------------
-
+            """
             if not out:
                 continue
 
@@ -361,7 +361,7 @@ class DTMFDetector:
                 # Convert amplitudes to numpy array for plotting
                 
                 # Save plotting data to a txt file
-                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
+                #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
                 
                 return "".join(digits)
             
