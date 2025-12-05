@@ -239,12 +239,17 @@ class Protocol:
     # decode string from readcommand and use Check_CRC
     def decode_and_check_crc(self, cmd_with_startbits):
         # Udpak checksum
-        checksum_digit = cmd_with_startbits[6]
+        print("fejl tjek, bitstring til CRC: " + cmd_with_startbits)
+        checksum_digit = cmd_with_startbits[7]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
-        command = cmd_with_startbits[2:6]
+        print("Checksum Digit: " + checksum_digit)
+        command = cmd_with_startbits[2:7]
 
-        seqNrDigit = cmd_with_startbits[7]
+        print("Command without startbits and seqNr: " + command)
+
+        seqNrDigit = cmd_with_startbits[8]
+        print("Sequence Number Digit: " + seqNrDigit)
 
         # Konverter til 3-bit binær streng
         bitstring = self.decimal_string_to_3bit_binary_string(command)
