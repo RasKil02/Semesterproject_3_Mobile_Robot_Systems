@@ -9,9 +9,9 @@ from scipy.signal import butter, sosfreqz
 
 # --- Filter parameters ---
 fs = 44100       # Sampling frequency
-low = 620        # Lower cutoff frequency
-high = 1700      # Upper cutoff frequency
-order = 8        # Filter order
+low = 650        # Lower cutoff frequency
+high = 1640      # Upper cutoff frequency
+order = 4       # Filter order
 
 # --- Design the filter ---
 nyq = fs / 2
