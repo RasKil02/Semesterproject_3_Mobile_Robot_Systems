@@ -77,7 +77,7 @@ def main():
         proto = Protocol()
 
         # Send første kommando
-        proto.play_dtmf_command_checksum()
+        proto.play_dtmf_command_checksum(8000)
 
         while True:
             print("Waiting for possible NACK or ACK response\n")
@@ -92,12 +92,12 @@ def main():
             # --- NACK → resend with NACK flag ---
             elif FeedbackCommand == NACK:
                 print("NACK received. Resending command...\n")
-                proto.play_dtmf_command_checksum(proto.command, True)
+                proto.play_dtmf_command_checksum(8000, proto.command, True)
 
             # --- None, tom streng eller noget andet → resend normal ---
             else:
                 print("No valid feedback received → Resending command...\n")
-                proto.play_dtmf_command_checksum(proto.command)
+                proto.play_dtmf_command_checksum(8000, proto.command)
 
         sd.stop()
 

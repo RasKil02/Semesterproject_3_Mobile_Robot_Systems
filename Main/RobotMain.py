@@ -111,11 +111,11 @@ def main():
             time.sleep(2) # Giver tid til at computer sender kommando færdig.
             print("Checksum invalid → sending NACK")
 
-            proto.play_DTMF_command(nack_command)
+            proto.play_DTMF_command(nack_command, 41100)
             continue  # Gå tilbage til starten af while-loopet for at vente på ny kommando
         
         if is_valid:
-            proto.play_DTMF_command(ack_command)
+            proto.play_DTMF_command(ack_command, 41100)
             retransmit = True  # Forventer ny kommando efter ACK
                     
             # Konverter til bitstring som RoutePlanner tager som input

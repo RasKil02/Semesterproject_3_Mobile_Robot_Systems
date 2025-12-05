@@ -118,7 +118,7 @@ class Protocol:
         return dtmf_sequence
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
-    def play_DTMF_command(self, command, duration=0.50, fs=8000):
+    def play_DTMF_command(self, command, fs, duration=0.50):
 
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print(dtmf_sequence)
@@ -134,7 +134,7 @@ class Protocol:
                 time.sleep(0.28)
 
     # generate command with set_command. Runs checksum and gets Checksum Remainder.
-    def play_dtmf_command_checksum(self, command=None, resend=False):    
+    def play_dtmf_command_checksum(self, fs, command=None, resend=False):    
         if command is None:
             command = self.set_command()
 
@@ -153,7 +153,7 @@ class Protocol:
         print("Checksum DTMF:", checkSumDTMF)
 
         startCommand = self.set_startcommand()  # Kald funktionen korrekt
-        self.play_DTMF_command(startCommand + command + checkSumDTMF + seqNr)
+        self.play_DTMF_command(startCommand + command + checkSumDTMF + seqNr, fs)
 
 
     # Converts a decimal string to a 3-bit binary string for each digit. Eksempel 01 -> 000001
