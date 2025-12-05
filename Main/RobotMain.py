@@ -95,6 +95,7 @@ def main():
         if retransmit == True:
             if command[7] == seqNrDigit:
                     print("Expected new command but received old command. Sending ACK to request new command")
+                    sd.stop()
                     proto.play_DTMF_command(ack_command, 41100) # Plays ACK to request new command
                     continue
 
@@ -111,10 +112,12 @@ def main():
             time.sleep(2) # Giver tid til at computer sender kommando færdig.
             print("Checksum invalid → sending NACK")
 
+            sd.stop()
             proto.play_DTMF_command(nack_command, 41100)
             continue  # Gå tilbage til starten af while-loopet for at vente på ny kommando
         
         if is_valid:
+            sd.stop()
             proto.play_DTMF_command(ack_command, 41100)
             retransmit = True  # Forventer ny kommando efter ACK
                     
