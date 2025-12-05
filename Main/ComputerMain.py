@@ -17,13 +17,16 @@ from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 
-def readCommandDuration(duration, sampler):
+def readCommandDuration(duration):
 
     # --- Create detector ---
     detector = DTMFDetector()
 
     # --- Stabilizer ---
     stabilizer = DigitStabilizer()
+
+    sampler = AudioSampler()
+
 
     print("Listening for DTMF command (*#, then 5 digits)...")
     cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
@@ -39,14 +42,12 @@ def main():
         ACK = 'B'
         proto = Protocol()
 
-        sampler = AudioSampler()
-
         # Send første kommando
         proto.play_dtmf_command_checksum(8000)
 
         while True:
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(10, sampler)
+            FeedbackCommand = readCommandDuration(10)
             print("Received:", FeedbackCommand)
 
             # --- ACK → exit loop ---
