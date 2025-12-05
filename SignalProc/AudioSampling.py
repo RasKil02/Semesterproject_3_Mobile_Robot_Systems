@@ -3,7 +3,7 @@ import sounddevice as sd
 
 
 class AudioSampler:
-    def __init__(self, fs):
+    def __init__(self, fs = 44100):
         self.fs = fs  # Processing sample rate (normally 8000 Hz)
 
     def searchForDevices(self):
