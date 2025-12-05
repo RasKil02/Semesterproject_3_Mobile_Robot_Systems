@@ -13,7 +13,7 @@ sys.path.append(project_root)
 import numpy as np
 import sounddevice as sd
 
-sd.default.device = (1, 1)
+sd.default.device = (0, 1)
 sd.default.channels = (2, 1)    # 2 output channels (stereo), 1 input channel (mono)
 sd.default.samplerate = 48000
 
