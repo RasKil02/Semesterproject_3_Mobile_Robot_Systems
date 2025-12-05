@@ -78,61 +78,46 @@ def runRobotWithRoutePlanner(command: str):
         rclpy.shutdown()
 
 def main():
+    nack_command = "A"
+    ack_command = "B"
+    retransmit = False
+
     while True:
         command = readCommand()
-
         print("Received command:", command)
+
+        if retransmit == True:
+            if command[7] == seqNrDigit:
+                    print("Expected new command but received old command. Sending ACK to request new command")
+                    proto.play_DTMF_command(ack_command) 
+                    continue
 
         # Dekod og check CRC
         try:
-            cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
+            cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit, seqNrDigit = \
                 proto.decode_and_check_crc(command)
         except ValueError:
             print("Error decoding command for checksu. One bit was not a number\n" )
-            is_valid = False
 
         # Hvis checksum ikke er valid → send NACK
-        while not is_valid:
-            time.sleep(5) # Giver tid til at computer sender kommando færdig.
+        if not is_valid:
+            retransmit = False  # Forventer genafsendelse efter NACK
+            time.sleep(2) # Giver tid til at computer sender kommando færdig.
             print("Checksum invalid → sending NACK")
 
-            nack_command = "A"
-            proto.play_DTMF_command(nack_command, duration=0.5)
-
-            # Vent op til 10 sek. på en ny kommando
-            RestransmittedCommand = readCommandDuration(10)
-
-            if not RestransmittedCommand:
-                print("Timeout → No command received → sending NACK again")
-                continue
-
-            # Ny kommando modtaget
-            if RestransmittedCommand is not None:
-                print("New command received:", RestransmittedCommand)
-
-            # Tjek den nye kommando
-                try:
-                    cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit = \
-                        proto.decode_and_check_crc(RestransmittedCommand)
+            proto.play_DTMF_command(nack_command)
+            continue  # Gå tilbage til starten af while-loopet for at vente på ny kommando
+        
+        if is_valid:
+            proto.play_DTMF_command(ack_command)
+            retransmit = True  # Forventer ny kommando efter ACK
                     
-                except ValueError:
-                    print("Error decoding command for checksu. One bit was not a number\n" )
-                    is_valid = False
-                except IndexError:
-                    print("Error decoding command: Command too short (index out of range)\n")
-                    is_valid = False
-            
-            if (is_valid):
-                print("Checksum valid efter NACK → fortsætter")
-                break
-            else:
-                continue
-                
-        # Konverter til bitstring som RoutePlanner tager som input
-        bitstring = bitstring[0:12] 
-
-        print("Checksum valid → executing route planner with bitstring: " + bitstring) 
-        runRobotWithRoutePlanner(bitstring)
+            # Konverter til bitstring som RoutePlanner tager som input
+            bitstring = bitstring[0:12] 
+            print("Checksum valid sender ACK")
+            print("executing route planner with bitstring: " + bitstring) 
+            runRobotWithRoutePlanner(bitstring)
+            continue
 
     # Exit loop with keyboard interrupt
         try:
