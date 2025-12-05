@@ -4,7 +4,7 @@ from scipy.signal import butter, sosfilt, sosfilt_zi, sosfreqz
 import matplotlib.pyplot as plt
 
 class BandPassFilter:
-    def __init__(self, fs: int, low: float = 600.0, high: float = 1700.0, order: int = 4):
+    def __init__(self, fs: int, low: float, high: float, order: int):
         self.fs = fs
         nyq = 0.5 * fs   # Nyquist-frekvens
         
