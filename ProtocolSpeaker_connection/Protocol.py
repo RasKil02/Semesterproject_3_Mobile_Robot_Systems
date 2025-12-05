@@ -240,7 +240,7 @@ class Protocol:
     def decode_and_check_crc(self, cmd_with_startbits):
         # Udpak checksum
         print("fejl tjek, bitstring til CRC: " + cmd_with_startbits)
-        checksum_digit = cmd_with_startbits[7]
+        checksum_digit = cmd_with_startbits[6]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
         print("Checksum Digit: " + checksum_digit)
@@ -248,7 +248,7 @@ class Protocol:
 
         print("Command without startbits and seqNr: " + command)
 
-        seqNrDigit = cmd_with_startbits[8]
+        seqNrDigit = cmd_with_startbits[7]
         print("Sequence Number Digit: " + seqNrDigit)
 
         # Konverter til 3-bit binær streng
