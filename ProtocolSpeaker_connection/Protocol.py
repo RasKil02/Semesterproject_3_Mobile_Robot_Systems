@@ -127,9 +127,9 @@ class Protocol:
                 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
 
-                stereo_tone = np.column_stack((tone, tone))
+                #stereo_tone = np.column_stack((tone, tone))
 
-                sd.play(stereo_tone, fs)
+                sd.play(tone, fs)
                 sd.wait(1)
                 time.sleep(0.28)
 
