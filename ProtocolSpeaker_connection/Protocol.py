@@ -198,9 +198,6 @@ class Protocol:
     # Calculates a new CRC Check for a command bit string on 12 bits and a 3 bit CRC string.
     # Used on the robot to check if the received command is valid. Should give (000) if valid.
     def Check_CRC(self, received_bitstring, poly_bitstring="1011"):
-        if received_bitstring != 15:
-            print("Received bitstring must be 15 bits long but was ", len(received_bitstring))
-            return None, False
         
         polynomial = list(poly_bitstring)
         polynomial_length = len(poly_bitstring)
