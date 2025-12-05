@@ -198,9 +198,6 @@ class Protocol:
     # Calculates a new CRC Check for a command bit string on 12 bits and a 3 bit CRC string.
     # Used on the robot to check if the received command is valid. Should give (000) if valid.
     def Check_CRC(self, received_bitstring, poly_bitstring="1011"):
-        if received_bitstring != 15:
-            print("Received bitstring must be 15 bits long but was ", len(received_bitstring))
-            return None, False
         
         polynomial = list(poly_bitstring)
         polynomial_length = len(poly_bitstring)
@@ -239,12 +236,17 @@ class Protocol:
     # decode string from readcommand and use Check_CRC
     def decode_and_check_crc(self, cmd_with_startbits):
         # Udpak checksum
+        print("fejl tjek, bitstring til CRC: " + cmd_with_startbits)
         checksum_digit = cmd_with_startbits[6]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
+        print("Checksum Digit: " + checksum_digit)
         command = cmd_with_startbits[2:7]
 
+        print("Command without startbits and seqNr: " + command)
+
         seqNrDigit = cmd_with_startbits[7]
+        print("Sequence Number Digit: " + seqNrDigit)
 
         # Konverter til 3-bit binær streng
         bitstring = self.decimal_string_to_3bit_binary_string(command)
