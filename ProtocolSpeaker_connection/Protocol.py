@@ -53,14 +53,9 @@ class Protocol:
         if not command.isdigit():
             raise ValueError("Input skal kun indeholde cifre.")
 
-        # Derefter tjek hvert tal individuelt 
-        for c in command:
-            number = int(c)
-            if not (0 <= number <= 7):
-                raise ValueError("Kun tal fra 0 til 7 er tilladt.")
 
         # Til sidst lav selve konverteringen
-        if len(command) == 1:
+        if len(command) == 1:    # eg. 1 -> 01
             result = f"0{command}"
         elif len(command) == 2:
             result = command
@@ -77,6 +72,7 @@ class Protocol:
         return self.startCommand
     
     def set_sequence_number(self):
+        # Only two sequence numbers: '0' and '1' (old and new sequence number)
         if self.seqNr is None:
             self.seqNr = '0'
         elif self.seqNr == '0':
@@ -106,26 +102,34 @@ class Protocol:
             '#': (941, 1477),
             'D': (941, 1633)
         }
-        return dtmf_freqs.get(number, (None, None))
+        return dtmf_freqs.get(number, (None, None)) # Return (None, None) if number is not found
 
     # Translate a full command string to list of DTMF frequency pair.
     def translateCommandToDTMFfreq(self, command):
         dtmf_sequence = []
+        """
+        Looping through each character in the command and
+        translate each character in the command to its corresponding DTMF frequencies.
+        """
         for char in command:
             freqs = self.translateNumberToDTMFfreq(char)
             if freqs != (None, None):
-                dtmf_sequence.append(freqs)
+                dtmf_sequence.append(freqs) # Append (add) the frequency to dtmf_sequence list
         return dtmf_sequence
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
     def play_DTMF_command(self, command, duration=0.50, fs=8000):
-
+        """
+        It takes a command string (e.g. "01*2"), converts each character into DTMF frequencies, 
+        generates the sine waves for those frequencies, and plays them.
+        """
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
-        print(dtmf_sequence)
+        print(dtmf_sequence) # eg. [(941, 1336), (697, 1209), (941, 1477)]]
         signal = np.array(dtmf_sequence)
+
         for freqs in signal:
-                t = np.linspace(0, duration, int(fs * duration), endpoint=False)
-                tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
+                t = np.linspace(0, duration, int(fs * duration), endpoint=False) # Time vector - defines duration and sampling rate
+                tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t)) # Generate DTMF tone by adding two sine waves
                 sd.play(tone, fs)
                 sd.wait(1)
                 time.sleep(0.28)
@@ -158,16 +162,17 @@ class Protocol:
         result = ''
         for c in decimal_string:
             num = int(c)
-            if not 0 <= num <= 7:
-                raise ValueError("Alle cifre skal være mellem 0 og 7 for 3-bit konvertering.")
             result += format(num, '03b')
         return result
-    
-    # Claculates the CRC remainder for a given a command bit string of 12 bits
+
+    # Claculates the CRC (Cyclic Redundancy Check) remainder for a given a command bit string of 12 bits
     # Used on the host computer to generate the checksum digit to send to the robot.
     def calculate_crc_remainder(self,
      input_bitstring, poly_bitstring="1011", initial_filler='0'):
-        """Calculate the CRC remainder of a string of bits using the given polynomial."""
+        """
+        Calculate the CRC remainder of a string of bits using the given polynomial.
+        The polynomial is converted into a list so it can be mutated during XOR division.
+        """
         polynomial = list(poly_bitstring)  # Konverter polynomiet til en liste for mutabilitet
         polynomial_length = len(poly_bitstring)  # Længden af polynomiet, fx 4
 
