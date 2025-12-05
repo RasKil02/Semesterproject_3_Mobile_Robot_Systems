@@ -181,12 +181,14 @@ class Protocol:
 
         # Append zeros to the input (length = degree of polynomial - 1)
         # Fx: "110110111011" + '0' * (4-1) = "110110111011000"
-        input_padded = input_bitstring + initial_filler * (polynomial_length - 1)
+        # CRC always append zeroes before division
+        input_padded = input_bitstring + initial_filler * (polynomial_length - 1) # Append zeros
 
         # Konverter input til liste for at kunne ændre bits under divisionen
         input_padded = list(input_padded)  # ['1', '1', '0', '1', ... '0', '0', '0']
 
         # Loop gennem hvert bit i den oprindelige inputstreng
+        # Binary division (XOR division)
         for i in range(len(input_bitstring)):
             if input_padded[i] == '1':  # Kun hvis bit er 1, udfør divisionen (XOR)
                 for j in range(polynomial_length):  # Udfør XOR med polynomiets bits
