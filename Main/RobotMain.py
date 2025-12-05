@@ -81,7 +81,7 @@ def main():
     ack_command = "B"
     retransmit = False
 
-    sampler = AudioSampler(fs=44100)
+    sampler = AudioSampler()
 
     while True:
         command = readCommand(sampler)
@@ -93,7 +93,7 @@ def main():
                 sampler.close()
                 sd.stop()
                 proto.play_DTMF_command(ack_command, 48000)
-                sampler = AudioSampler(fs=44100)
+                sampler = AudioSampler()
                 continue
 
         cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit, seqNrDigit = \
@@ -104,7 +104,7 @@ def main():
             sampler.close()
             sd.stop()
             proto.play_DTMF_command(nack_command, 48000)
-            sampler = AudioSampler(fs=44100)
+            sampler = AudioSampler()
             continue
 
         print("Checksum valid → sending ACK")
@@ -118,7 +118,7 @@ def main():
         print("executing route planner with bitstring:", bitstring)
         runRobotWithRoutePlanner(bitstring)
 
-        sampler = AudioSampler(fs=44100)
+        sampler = AudioSampler()
 
 
 if __name__ == "__main__":
