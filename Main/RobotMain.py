@@ -12,6 +12,11 @@ sys.path.append(project_root)
 
 import numpy as np
 import sounddevice as sd
+
+sd.default.device = (1, None)      # Use USB sound card for output
+sd.default.channels = 2            # Your USB device requires stereo
+sd.default.samplerate = 48000      # Safe working sample rate
+
 from ProtocolSpeaker_connection.Protocol import Protocol
 import rclpy
 
