@@ -17,16 +17,13 @@ from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 
-def readCommandDuration(duration):
+def readCommandDuration(duration, sampler):
 
     # --- Create detector ---
     detector = DTMFDetector()
 
     # --- Stabilizer ---
     stabilizer = DigitStabilizer()
-
-    # --- Audio sampler (streaming) ---
-    sampler = AudioSampler()
 
     print("Listening for DTMF command (*#, then 5 digits)...")
     cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
