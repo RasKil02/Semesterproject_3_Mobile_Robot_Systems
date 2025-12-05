@@ -1,1 +1,0 @@
-In this folder all code for the communication protocol will be.
