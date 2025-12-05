@@ -242,7 +242,7 @@ class Protocol:
         checksum_digit = cmd_with_startbits[6]
 
         # Fjern *# og checksum → behold de 5 vigtige cifre
-        command = cmd_with_startbits[2:7]
+        command = cmd_with_startbits[2:6]
 
         seqNrDigit = cmd_with_startbits[7]
 
