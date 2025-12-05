@@ -1,10 +1,12 @@
 import numpy as np
 import sounddevice as sd
 
-
 class AudioSampler:
-    def __init__(self, fs = 44100):
-        self.fs = fs  # Processing sample rate (normally 8000 Hz)
+    def __init__(self, fs=44100):
+        self.fs = fs
+        self.stream = None
+        self.device = None
+        self.rec_fs = None
 
     def searchForDevices(self):
         try:
@@ -14,57 +16,58 @@ class AudioSampler:
                     return i
         except:
             pass
-        return sd.default.device[0]
+        return sd.default.device[1]  # input index
 
     def setupDevice(self, device):
+        # keep output device unchanged
         cur = sd.default.device
-        current_out = cur[1] if isinstance(cur, (list, tuple)) else None
-        sd.default.device = (device, current_out)
+        current_out = cur[0]
+
+        sd.default.device = (current_out, device)
 
         info = sd.query_devices(device, "input")
         native_fs = float(info["default_samplerate"])
         print(f"[Device] name={info['name']}, default samplerate={native_fs} Hz")
         return native_fs
 
-    def stream_blocks(self, blocksize):
-        device = self.searchForDevices()
-        native_fs = self.setupDevice(device)
+    def start_stream(self, blocksize):
+        self.device = self.searchForDevices()
+        native_fs = self.setupDevice(self.device)
+        self.rec_fs = int(native_fs)
 
-        # Always use the device's native sample rate
-        rec_fs = int(native_fs)
-        use_resample = False
-        print(f"[FS] Using native sample rate: {rec_fs} Hz")
+        print(f"[FS] Using native sample rate: {self.rec_fs} Hz")
 
-        # Open the input stream
-        with sd.InputStream(
-            device=device,
+        # Create stream, but DO NOT use a `with` block
+        self.stream = sd.InputStream(
+            device=self.device,
             channels=1,
-            samplerate=rec_fs,
+            samplerate=self.rec_fs,
             blocksize=blocksize,
             dtype="float32"
-        ) as stream:
+        )
+        self.stream.start()
 
-            buffer = np.zeros(0, dtype=np.float32)
+        print("[Audio] Streaming started...")
 
-            print("[Audio] Streaming started...")
+    def stream_blocks(self, blocksize):
+        if self.stream is None:
+            self.start_stream(blocksize)
 
-            while True:
-                block, _ = stream.read(blocksize)
-                block = block.flatten()
+        while True:
+            block, _ = self.stream.read(blocksize)
+            block = block.flatten()
 
-                if use_resample:
-                    # Resample block from rec_fs -> self.fs
-                    from scipy.signal import resample_poly
-                    g = np.gcd(rec_fs, self.fs)
-                    up = self.fs // g
-                    down = rec_fs // g
-                    block = resample_poly(block, up, down).astype(np.float32)
+            if len(block) > blocksize:
+                block = block[:blocksize]
+            elif len(block) < blocksize:
+                pad = np.zeros(blocksize - len(block), dtype=np.float32)
+                block = np.concatenate((block, pad))
 
-                # If the resampling made the block the wrong size, fix it
-                if len(block) > blocksize:
-                    block = block[:blocksize]
-                elif len(block) < blocksize:
-                    pad = np.zeros(blocksize - len(block), dtype=np.float32)
-                    block = np.concatenate((block, pad))
-                    
-                yield block
+            yield block
+
+    def close(self):
+        if self.stream is not None:
+            print("[Audio] Closing input stream...")
+            self.stream.stop()
+            self.stream.close()
+            self.stream = None

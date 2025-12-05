@@ -33,16 +33,13 @@ proto = Protocol()
 newCommandEvent = threading.Event()
 control_queue = queue.Queue()
 
-def readCommandDuration(duration):
+def readCommandDuration(duration, sampler):
 
     # --- Create detector ---
     detector = DTMFDetector()
 
     # --- Stabilizer ---
     stabilizer = DigitStabilizer()
-
-    # --- Audio sampler (streaming) ---
-    sampler = AudioSampler()
 
     print("Listening for DTMF command (*#, then 6 digits)...")
     cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
@@ -51,16 +48,13 @@ def readCommandDuration(duration):
     print(cmd if cmd else "(none)")
     return cmd
 
-def readCommand():
+def readCommand(sampler):
 
     # --- Create detector ---
     detector = DTMFDetector()
 
     # --- Stabilizer ---
     stabilizer = DigitStabilizer()
-
-    # --- Audio sampler (streaming) ---
-    sampler = AudioSampler()
 
     print("Listening for DTMF command (*#, then 6 digits)...")
     cmd = detector.stream_and_detect(stabilizer, sampler)
@@ -87,56 +81,54 @@ def main():
     ack_command = "B"
     retransmit = False
 
+    sampler = AudioSampler()
+
     while True:
-        command = readCommand()
+        command = readCommand(sampler)
         print("Received command:", command)
 
-        # Check for retransmission
-        if retransmit == True:
+        if retransmit:
             if command[7] == seqNrDigit:
-                    print("Expected new command but received old command. Sending ACK to request new command")
-                    sd.stop()
-                    proto.play_DTMF_command(ack_command, 48000) # Plays ACK to request new command
-                    continue
+                print("Expected new command but received old command. Sending ACK")
+                sampler = AudioSampler()
+                sampler.close()
+                sd.stop()
+                proto.play_DTMF_command(ack_command, 48000)
+                sampler = AudioSampler()
+                continue
 
-        # Dekod og check CRC
-        try:
-            cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit, seqNrDigit = \
-                proto.decode_and_check_crc(command)
-        except ValueError:
-            print("Error decoding command for checksu. One bit was not a number\n" )
+        cmd_no_prefix, bitstring, is_valid, remainder, checksum_digit, seqNrDigit = \
+            proto.decode_and_check_crc(command)
 
-        # Hvis checksum ikke er valid → send NACK
         if not is_valid:
-            retransmit = False  # Forventer genafsendelse efter NACK
-            time.sleep(2) # Giver tid til at computer sender kommando færdig.
             print("Checksum invalid → sending NACK")
-
+            sampler = AudioSampler()
+            sampler.close()
             sd.stop()
             proto.play_DTMF_command(nack_command, 48000)
-            continue  # Gå tilbage til starten af while-loopet for at vente på ny kommando
-        
-        if is_valid:
-            sd.stop()
-            proto.play_DTMF_command(ack_command, 48000)
-            retransmit = True  # Forventer ny kommando efter ACK
-                    
-            # Konverter til bitstring som RoutePlanner tager som input
-            bitstring = bitstring[0:12] 
-            print("Checksum valid sender ACK")
-            print("executing route planner with bitstring: " + bitstring) 
-            runRobotWithRoutePlanner(bitstring)
+            sampler = AudioSampler()
             continue
+        
+        print("Checksum valid → sending ACK")
+        sampler = AudioSampler()
+        sampler.close()
+        sd.stop()
+        proto.play_DTMF_command(ack_command, 48000)
 
-    # Exit loop with keyboard interrupt
-        try:
-            time.sleep(1)
-        except KeyboardInterrupt:
-            running = False
-            print("Exiting program.")
+        retransmit = True
+
+        bitstring = bitstring[:12]
+        print("executing route planner with bitstring:", bitstring)
+        runRobotWithRoutePlanner(bitstring)
+
+        sampler = AudioSampler()
+        continue
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Exiting program.")
 
 

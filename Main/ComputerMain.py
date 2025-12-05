@@ -42,12 +42,14 @@ def main():
         ACK = 'B'
         proto = Protocol()
 
+        sampler = AudioSampler()
+
         # Send første kommando
         proto.play_dtmf_command_checksum(8000)
 
         while True:
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(10)
+            FeedbackCommand = readCommandDuration(10, sampler)
             print("Received:", FeedbackCommand)
 
             # --- ACK → exit loop ---
