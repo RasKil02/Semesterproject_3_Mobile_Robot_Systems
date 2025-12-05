@@ -96,7 +96,7 @@ def main():
             if command[7] == seqNrDigit:
                     print("Expected new command but received old command. Sending ACK to request new command")
                     sd.stop()
-                    proto.play_DTMF_command(ack_command, 41100) # Plays ACK to request new command
+                    proto.play_DTMF_command(ack_command, 48000) # Plays ACK to request new command
                     continue
 
         # Dekod og check CRC
@@ -113,12 +113,12 @@ def main():
             print("Checksum invalid → sending NACK")
 
             sd.stop()
-            proto.play_DTMF_command(nack_command, 41100)
+            proto.play_DTMF_command(nack_command, 48000)
             continue  # Gå tilbage til starten af while-loopet for at vente på ny kommando
         
         if is_valid:
             sd.stop()
-            proto.play_DTMF_command(ack_command, 41100)
+            proto.play_DTMF_command(ack_command, 48000)
             retransmit = True  # Forventer ny kommando efter ACK
                     
             # Konverter til bitstring som RoutePlanner tager som input
