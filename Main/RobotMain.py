@@ -39,7 +39,7 @@ def readCommandDuration(duration):
     # --- Audio sampler (streaming) ---
     sampler = AudioSampler()
 
-    print("Listening for DTMF command (*#, then 5 digits)...")
+    print("Listening for DTMF command (*#, then 6 digits)...")
     cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
 
     print("\n--- Detected command ---")
@@ -57,7 +57,7 @@ def readCommand():
     # --- Audio sampler (streaming) ---
     sampler = AudioSampler()
 
-    print("Listening for DTMF command (*#, then 5 digits)...")
+    print("Listening for DTMF command (*#, then 6 digits)...")
     cmd = detector.stream_and_detect(stabilizer, sampler)
 
     print("\n--- Detected command ---")
@@ -86,10 +86,11 @@ def main():
         command = readCommand()
         print("Received command:", command)
 
+        # Check for retransmission
         if retransmit == True:
             if command[7] == seqNrDigit:
                     print("Expected new command but received old command. Sending ACK to request new command")
-                    proto.play_DTMF_command(ack_command) 
+                    proto.play_DTMF_command(ack_command) # Plays ACK to request new command
                     continue
 
         # Dekod og check CRC

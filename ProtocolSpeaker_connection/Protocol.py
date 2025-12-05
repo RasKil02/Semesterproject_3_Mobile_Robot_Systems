@@ -17,14 +17,15 @@ class Protocol:
         while True:
             while True:
                 # Indtast og valider room og supply adresser
-                self.roomAddress = input("Enter room address: ")
-                if (0 <= int(self.roomAddress) <= 7):
+                self.roomAddress = input("Enter room address (0-3): ")
+                if (0 <= int(self.roomAddress) <= 3):
                     break
                 else:
-                    print("Room address must be between 0 and 7. Try again: ")
+                    print("Room address must be between 0 and 3. Try again: ")
 
             while True:
-                self.supplyAdress = input("Enter supply address: ")
+                print("Supply addresses:\n1: Supply Point 1\n2: Supply Point 2")
+                self.supplyAdress = input("Enter supply address (1-2): ")
 
                 if (1 <= int(self.supplyAdress) <= 2):
                     break
@@ -52,7 +53,7 @@ class Protocol:
         if not command.isdigit():
             raise ValueError("Input skal kun indeholde cifre.")
 
-        # Derefter tjek hvert tal individuelt
+        # Derefter tjek hvert tal individuelt 
         for c in command:
             number = int(c)
             if not (0 <= number <= 7):
