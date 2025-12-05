@@ -1,43 +1,84 @@
 import numpy as np
 import sounddevice as sd
+import platform
 
 class AudioSampler:
-    def __init__(self, fs=44100):
+    def __init__(self, fs=44100, device_mode=None):
         self.fs = fs
         self.stream = None
         self.device = None
         self.rec_fs = None
 
+        # If not specified, auto-detect platform
+        if device_mode is None:
+            system = platform.system().lower()
+            if "linux" in system:
+                # Raspberry Pi runs Linux, but so do PCs.
+                # Detect Pi by checking CPU architecture.
+                if platform.machine().startswith("arm"):
+                    self.device_mode = "pi"
+                else:
+                    self.device_mode = "pc"
+            else:
+                self.device_mode = "pc"
+        else:
+            self.device_mode = device_mode
+
+        print(f"[AudioSampler] Mode selected: {self.device_mode}")
+
+    # ---------------------------------------------------------
+    # Device selection logic
+    # ---------------------------------------------------------
     def searchForDevices(self):
-        try:
-            devs = sd.query_devices()
+        devs = sd.query_devices()
+
+        # -----------------------
+        # Raspberry Pi search mode
+        # -----------------------
+        if self.device_mode == "pi":
             for i, d in enumerate(devs):
-                if d.get('max_input_channels', 0) > 0 and "usb" in d.get('name','').lower():
+                if d.get("max_input_channels", 0) > 0:
+                    name = d.get("name", "").lower()
+                    if "usb" in name or "device" in name:
+                        print(f"[AudioSampler] Pi USB mic found: index {i}, {d['name']}")
+                        return i
+
+        # -----------------------
+        # PC / Laptop search mode
+        # -----------------------
+        if self.device_mode == "pc":
+            # Choose first device with input channels > 0
+            for i, d in enumerate(devs):
+                if d.get("max_input_channels", 0) > 0:
+                    print(f"[AudioSampler] PC mic found: index {i}, {d['name']}")
                     return i
-        except:
-            pass
-        return sd.default.device[1]  # input index
 
+        # -----------------------
+        # Fallback: use default input device
+        # -----------------------
+        fallback = sd.default.device[1]
+        print(f"[AudioSampler] Using fallback input device index = {fallback}")
+        return fallback
+
+    # ---------------------------------------------------------
     def setupDevice(self, device):
-        # keep output device unchanged
-        cur = sd.default.device
-        current_out = cur[0]
-
-        sd.default.device = (current_out, device)
+        # Preserve OUTPUT device
+        out_dev = sd.default.device[0]
+        sd.default.device = (out_dev, device)
 
         info = sd.query_devices(device, "input")
         native_fs = float(info["default_samplerate"])
-        print(f"[Device] name={info['name']}, default samplerate={native_fs} Hz")
+        print(f"[Device] Input device = {info['name']} @ {native_fs} Hz")
         return native_fs
 
+    # ---------------------------------------------------------
     def start_stream(self, blocksize):
         self.device = self.searchForDevices()
         native_fs = self.setupDevice(self.device)
         self.rec_fs = int(native_fs)
 
-        print(f"[FS] Using native sample rate: {self.rec_fs} Hz")
+        print(f"[FS] Using native input sample rate: {self.rec_fs} Hz")
 
-        # Create stream, but DO NOT use a `with` block
         self.stream = sd.InputStream(
             device=self.device,
             channels=1,
@@ -47,8 +88,9 @@ class AudioSampler:
         )
         self.stream.start()
 
-        print("[Audio] Streaming started...")
+        print("[Audio] Input streaming started...")
 
+    # ---------------------------------------------------------
     def stream_blocks(self, blocksize):
         if self.stream is None:
             self.start_stream(blocksize)
@@ -60,11 +102,11 @@ class AudioSampler:
             if len(block) > blocksize:
                 block = block[:blocksize]
             elif len(block) < blocksize:
-                pad = np.zeros(blocksize - len(block), dtype=np.float32)
-                block = np.concatenate((block, pad))
+                block = np.pad(block, (0, blocksize - len(block)))
 
             yield block
 
+    # ---------------------------------------------------------
     def close(self):
         if self.stream is not None:
             print("[Audio] Closing input stream...")
