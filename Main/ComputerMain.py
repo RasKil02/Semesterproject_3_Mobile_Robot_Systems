@@ -3,9 +3,7 @@ import os
 
 # Find mappen hvor dette script kører fra (ProtocolSpeaker_connection)
 current_dir = os.path.dirname(__file__)  
-# Gå et niveau op til projektroden (Semesterproject_3_Mobile_Robot_Systems)
 project_root = os.path.abspath(os.path.join(current_dir, '..'))  
-# Tilføj projektroden til sys.path så du kan importere søskende mapper som DriveSystem
 sys.path.append(project_root)
 
 import numpy as np
@@ -16,6 +14,13 @@ from SignalProc.DTMFDetector import DigitStabilizer
 from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
+
+def print_output_device():
+    dev = sd.default.device
+    output_id = dev[1]  # (input_id, output_id)
+    device_info = sd.query_devices(output_id)
+    print(f"Using audio output device: {device_info['name']} (ID {output_id})")
+
 
 def readCommandDuration(duration):
 
@@ -39,6 +44,8 @@ def readCommandDuration(duration):
 
 def main():
 
+    print_output_device()
+
     while True:
         NACK = 'A'
         ACK = 'B'
@@ -48,9 +55,7 @@ def main():
         # Send første kommando
         proto.play_dtmf_command_checksum(8000)
         
-
         while True:
-            
             if restart_counter >= 4:
                 print("No valid ACK received after 4 attempts. Aborting...\n")
                 break
@@ -59,18 +64,15 @@ def main():
             FeedbackCommand = readCommandDuration(15)
             print("Received:", FeedbackCommand)
 
-            # --- ACK → exit loop ---
             if FeedbackCommand == ACK:
                 print("ACK received. Proceeding to next command\n")
                 break
 
-            # --- NACK → resend with NACK flag ---
             elif FeedbackCommand == NACK:
                 print("NACK received. Resending command...\n")
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1
 
-            # --- None, tom streng eller noget andet → resend normal ---
             else:
                 print("No valid feedback received → Resending command...\n")
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
@@ -78,4 +80,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nKeyboardInterrupt detected. Exiting gracefully...\n")
+    finally:
+        # Hvis du senere får globale ressourcer, kan du lukke dem her
+        print("Cleanup complete. Goodbye!")

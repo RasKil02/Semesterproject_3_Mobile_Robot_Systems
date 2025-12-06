@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Find mappen hvor dette script kører fra (ProtocolSpeaker_connection)
+current_dir = os.path.dirname(__file__)  
+project_root = os.path.abspath(os.path.join(current_dir, '..'))  
+sys.path.append(project_root)
+
 from SignalProc.Plotting import Plotting
 import numpy as np
 import matplotlib.pyplot as plt

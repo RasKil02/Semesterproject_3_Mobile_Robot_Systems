@@ -1,5 +1,4 @@
 # dtmf_detector.py
-from encodings.punycode import digits
 import numpy as np
 import argparse
 import os
