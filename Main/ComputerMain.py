@@ -19,22 +19,24 @@ import argparse
 
 def readCommandDuration(duration):
 
-    # --- Create detector ---
     detector = DTMFDetector()
-
-    # --- Stabilizer ---
     stabilizer = DigitStabilizer()
-
     sampler = AudioSampler()
 
-
     print("Listening for DTMF command (*#, then 5 digits)...")
-    cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
+
+    try:
+        cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
+    finally:
+        # ALWAYS executed
+        sampler.close()
+        sd.stop()
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
 
     return cmd
+
 
 def main():
 
