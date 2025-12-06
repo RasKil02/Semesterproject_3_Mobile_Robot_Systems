@@ -121,7 +121,8 @@ class Protocol:
     def play_DTMF_command(self, command, fs, duration=0.50):
 
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
-        print(dtmf_sequence)
+        print("Playing DTMF sequence:")
+        print("DTMF Frequencies (Hz):", dtmf_sequence)
         signal = np.array(dtmf_sequence)
         for freqs in signal:
                 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
@@ -129,7 +130,9 @@ class Protocol:
 
                 stereo_tone = np.column_stack((tone, tone))
 
+                print("Playing stereo tone:", stereo_tone)
                 sd.play(stereo_tone, fs)
+                print("Played tone")
                 sd.wait(1)
                 time.sleep(0.28)
 
@@ -159,6 +162,8 @@ class Protocol:
         startCommand = self.set_startcommand()  # Kald funktionen korrekt
         
         # Husk at tilføje duration parameter!
+        print("About to enter play_DTMF_command function")
+        print("Command to send:", command_to_send)
         self.play_DTMF_command(startCommand + command_to_send + checkSumDTMF + seqNr, fs, duration=0.50)
 
 
