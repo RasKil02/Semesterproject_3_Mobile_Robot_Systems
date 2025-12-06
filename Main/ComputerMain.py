@@ -34,9 +34,6 @@ def readCommandDuration(duration):
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
 
-    sampler.close()
-    sd.stop()
-
     return cmd
 
 def main():
@@ -76,9 +73,7 @@ def main():
             else:
                 print("No valid feedback received → Resending command...\n")
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
-                restart_counter += 1
-
-        sd.stop()
+                restart_counter += 1    
 
 
 if __name__ == "__main__":
