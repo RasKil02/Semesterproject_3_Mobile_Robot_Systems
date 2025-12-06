@@ -154,7 +154,9 @@ class DTMFDetector:
                  dom_db: float = 12.0,       # dominans-tærskel
                  snr_db: float = 12.0,       # SNR-tærskel
                  twist_pos_db: float = +5.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -5.0):  # negativ twist grænse (col > row)
+                 twist_neg_db: float = -5.0,
+                 twist_pos_max: float = +30,
+                 twist_neg_min: float = -30):  # negativ twist grænse (col > row)
 
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
@@ -175,6 +177,8 @@ class DTMFDetector:
         self.snr_db  = float(snr_db)
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
+        self.twist_pos_max = float(twist_pos_max)
+        self.twist_neg_min = float(twist_neg_min)
 
     def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
                         sep_db_values, dom_db_values, twist_values):
@@ -270,7 +274,18 @@ class DTMFDetector:
         abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db)
 
         twist = (l_abs_db - h_abs_db)
-        twist_ok = (self.twist_neg_db <= twist <= self.twist_pos_db)
+
+        rms = np.sqrt(np.mean(seg_f**2)) + EPS
+
+        twist_pos_threshold, twist_neg_threshold = self.adaptive_twist_threshold(rms, 
+                                                                                rms_min=0.01, 
+                                                                                rms_max=0.1,
+                                                                                twist_pos_max=self.twist_pos_max,
+                                                                                twist_neg_min=self.twist_neg_min,
+                                                                                twist_pos_default=self.twist_pos_db,
+                                                                                twist_neg_default=self.twist_neg_db)
+
+        twist_ok = (twist_neg_threshold <= twist <= twist_pos_threshold)
 
         l_dom_db = db10(E_low[lf]  / low_noise)
         h_dom_db = db10(E_high[hf] / high_noise)
@@ -294,12 +309,14 @@ class DTMFDetector:
             "sep_high": h_abs_db - h2_db,
             "dom_low": l_dom_db,
             "dom_high": h_dom_db,
-            "twist": twist}
+            "twist": twist,
+            "twist_pos_threshold": twist_pos_threshold,
+            "twist_neg_threshold": twist_neg_threshold}
     
     def collect_plot_metrics(self, t_ms, block, sym, metrics,
                          amplitudes, block_symbols, SNR_values,
                          min_db_values, sep_db_values,
-                         dom_db_values, twist_values):
+                         dom_db_values, twist_values, twist_neg_values, twist_pos_values):
 
         if t_ms < 2000.0:
             return
@@ -317,6 +334,8 @@ class DTMFDetector:
         dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
         # twist
         twist_values.append(metrics['twist'])
+        twist_neg_values.append(metrics['twist_neg_threshold'])
+        twist_pos_values.append(metrics['twist_pos_threshold'])
 
     
     def stream_and_detect(self, stabilizer, sampler, plot=False):
@@ -335,6 +354,8 @@ class DTMFDetector:
         sep_db_values = []
         dom_db_values = []
         twist_values = []
+        twist_neg_values = []
+        twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
             # rms = np.sqrt(np.mean(block**2))
@@ -347,7 +368,7 @@ class DTMFDetector:
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, dom_db_values, twist_values
+                min_db_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
             )
 
             if not out:
@@ -403,6 +424,8 @@ class DTMFDetector:
         sep_db_values = []
         dom_db_values = []
         twist_values = []
+        twist_neg_values = []
+        twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
 
@@ -415,7 +438,7 @@ class DTMFDetector:
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, dom_db_values, twist_values
+                min_db_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
             )
 
             t_ms += block_ms
@@ -438,6 +461,22 @@ class DTMFDetector:
         self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
         return digit
 
+    def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1,
+                             twist_pos_max=30.0, twist_neg_min=-30.0,
+                             twist_pos_default=5.0, twist_neg_default=-5.0):
+
+        if rms <= rms_min:
+            # Lowest RMS, widest threshold
+            return twist_pos_max, twist_neg_min
+        elif rms >= rms_max:
+            # Highest RMS, narrowest threshold (default)
+            return twist_pos_default, twist_neg_default
+        else:
+            # Linearly interpolate thresholds between max and default
+            scale = (rms - rms_min) / (rms_max - rms_min)
+            twist_pos = twist_pos_max - scale * (twist_pos_max - twist_pos_default)
+            twist_neg = twist_neg_min + scale * (twist_neg_default - twist_neg_min)
+            return twist_pos, twist_neg
 
 
 

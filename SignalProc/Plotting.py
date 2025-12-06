@@ -50,19 +50,14 @@ class Plotting:
             "thresholdline": thresholdline
         }
         
-    def barplot_of_twist(self, twist_values, twist_neg, twist_pos):
-        x_values = np.arange(len(twist_values))
-        y_values = twist_values
-
-        # two threshold lines
-        neg_line = np.full(len(twist_values), twist_neg)
-        pos_line = np.full(len(twist_values), twist_pos)
+    def barplot_of_twist(self, twist_values, twist_neg_values, twist_pos_values):
+        x = np.arange(len(twist_values))
 
         return {
-            "x": x_values,
-            "y": y_values,
-            "neg_line": neg_line,
-            "pos_line": pos_line
+            "x": x,
+            "y": twist_values,
+            "neg_line": np.array(twist_neg_values),
+            "pos_line": np.array(twist_pos_values)
         }
 
     def plot_amplitude_and_DTMFtones(self, barplot, amplitudeplot, block_ms=40):
