@@ -470,21 +470,26 @@ class DTMFDetector:
         return digit
 
     def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1,
-                             twist_pos_max=15.0, twist_neg_min=-15.0,
+                             twist_pos_max=30.0, twist_neg_min=-30.0,
                              twist_pos_default=5.0, twist_neg_default=-5.0):
 
         if rms <= rms_min:
-            # Lowest RMS, widest threshold
-            return twist_pos_max, twist_neg_min
-        elif rms >= rms_max:
-            # Highest RMS, narrowest threshold (default)
+            # Very low RMS → no tone → be strict
             return twist_pos_default, twist_neg_default
+
+        elif rms >= rms_max:
+            # High RMS → tone present → be lenient
+            return twist_pos_max, twist_neg_min
+
         else:
-            # Linearly interpolate thresholds between max and default
+            # Interpolate from strict → lenient as RMS increases
             scale = (rms - rms_min) / (rms_max - rms_min)
-            twist_pos = twist_pos_max - scale * (twist_pos_max - twist_pos_default)
-            twist_neg = twist_neg_min + scale * (twist_neg_default - twist_neg_min)
+
+            twist_pos = twist_pos_default + scale * (twist_pos_max - twist_pos_default)
+            twist_neg = twist_neg_default + scale * (twist_neg_min - twist_neg_default)
+
             return twist_pos, twist_neg
+
 
 
 
