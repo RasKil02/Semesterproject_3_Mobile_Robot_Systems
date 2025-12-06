@@ -33,6 +33,10 @@ def readCommandDuration(duration):
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
+
+    sampler.close()
+    sd.stop()
+
     return cmd
 
 def main():
@@ -45,6 +49,7 @@ def main():
 
         # Send første kommando
         proto.play_dtmf_command_checksum(8000)
+        
 
         while True:
             
