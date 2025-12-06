@@ -278,6 +278,9 @@ class DTMFDetector:
 
         snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
 
+        #print all values
+        print(f"LF: {lf} Hz, HF: {hf} Hz | l_abs_db: {l_abs_db:.2f}, h_abs_db: {h_abs_db:.2f}, blk_db: {blk_db:.2f}, l2_db: {l2_db:.2f}, h2_db: {h2_db:.2f}, snr_low_db: {snr_low_db:.2f}, snr_high_db: {snr_high_db:.2f}, sep_ok: {sep_ok}, abs_ok: {abs_ok}, twist: {twist:.2f}, twist_ok: {twist_ok}, dom_ok: {dom_ok}, snr_ok: {snr_ok}")
+
         good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
 
         sym = LUT.get((lf, hf), "?") if good else "?"
