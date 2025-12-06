@@ -381,6 +381,8 @@ class DTMFDetector:
                 break
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
+            #debbuging
+            print(out)
             
             t_ms += block_ms
 
