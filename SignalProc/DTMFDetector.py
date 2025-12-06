@@ -1,4 +1,5 @@
 # dtmf_detector.py
+from encodings.punycode import digits
 import numpy as np
 import argparse
 import os
@@ -298,41 +299,59 @@ class DTMFDetector:
             "dom_low": l_dom_db,
             "dom_high": h_dom_db,
             "twist": twist}
+    
+    def collect_plot_metrics(self, t_ms, block, sym, metrics,
+                         amplitudes, block_symbols, SNR_values,
+                         min_db_values, sep_db_values,
+                         dom_db_values, twist_values):
 
+        if t_ms < 2000.0:
+            return
+
+        amplitudes.extend(block.tolist())
+        block_symbols.append(sym if sym is not None else " ")
+
+        # SNR
+        SNR_values.append(min(metrics['snr_low'], metrics['snr_high']))
+        # min_db
+        min_db_values.append(min(metrics['min_db_low'], metrics['min_db_high']))
+        # separation metric
+        sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
+        # dominance
+        dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
+        # twist
+        twist_values.append(metrics['twist'])
+
+    
     def stream_and_detect(self, stabilizer, sampler, plot=False):
 
         digits = []
-        start_stage = 0          # 0 = waiting for '*', 1 = waiting for '#'
+        start_stage = 0
         collecting_payload = False
 
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
 
-        amplitudes = []         # <-- store amplitude samples here
-        block_symbols = []     # <-- store detected symbols here
-        SNR_values = []       # <-- store SNR values here
-        min_db_values = []   # <-- store min_db values here
-        sep_db_values = []  # <-- store sep_db values here
-        dom_db_values = [] # <-- store dom_db values here      
-        twist_values = [] # <-- store twist values here  
+        amplitudes = []
+        block_symbols = []
+        SNR_values = []
+        min_db_values = []
+        sep_db_values = []
+        dom_db_values = []
+        twist_values = []
 
         for block in sampler.stream_blocks(self.block):
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
-            """
-            # --- PLOTTING DATA COLLECTION ---
-            # Append block samples to amplitudes list if 2 seconds have passed
-            if t_ms >= 2000.0:
-                amplitudes.extend(block.tolist())
-                block_symbols.append(sym if sym is not None else " ")
-                SNR_values.append(min(metrics['snr_low'], metrics['snr_high']))
-                min_db_values.append(min(metrics['min_db_low'], metrics['min_db_high']))
-                sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
-                dom_db_values.append(min(metrics['dom_low'], metrics['dom_high']))
-                twist_values.append(metrics['twist'])
-            # -----------------------------------
-            """
+
+            # NEW clean call
+            self.collect_plot_metrics(
+                t_ms, block, sym, metrics,
+                amplitudes, block_symbols, SNR_values,
+                min_db_values, sep_db_values, dom_db_values, twist_values
+            )
+
             if not out:
                 continue
 
@@ -356,26 +375,37 @@ class DTMFDetector:
                         start_stage = 0
                     continue
 
-            # Collect payload digits
+            # collect payload digits
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
             if len(digits) == 8:
-                # Convert amplitudes to numpy array for plotting
-                
-                # Save plotting data to a txt file
-                #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
-                
+
+                self.save_plotting_txt(
+                    digits, amplitudes, block_symbols, SNR_values,
+                    sep_db_values, dom_db_values, twist_values
+                )
+
                 return "".join(digits)
+
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
 
-        digit = ""    
+        digit = ""
         collecting_payload = False
 
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
         max_time_ms = duration * 1000.0
+
+        # plotting containers
+        amplitudes = []
+        block_symbols = []
+        SNR_values = []
+        min_db_values = []
+        sep_db_values = []
+        dom_db_values = []
+        twist_values = []
 
         for block in sampler.stream_blocks(self.block):
 
@@ -384,9 +414,14 @@ class DTMFDetector:
                 break
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
-            #debbuging
-            print(out)
-            
+
+            # NEW clean call
+            self.collect_plot_metrics(
+                t_ms, block, sym, metrics,
+                amplitudes, block_symbols, SNR_values,
+                min_db_values, sep_db_values, dom_db_values, twist_values
+            )
+
             t_ms += block_ms
 
             if not out:
@@ -397,12 +432,13 @@ class DTMFDetector:
                 if out == "B":
                     digit = out
                     print("ACK 'B' detected → stopping detection")
-                    return digit
+                    collecting_payload = True
 
                 elif out == "A":
                     digit = out
                     collecting_payload = True
-            
+
+            self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
             return digit
 
 

@@ -23,7 +23,7 @@ def readCommandDuration(duration):
     stabilizer = DigitStabilizer()
     sampler = AudioSampler()
 
-    print("Listening for DTMF command (*#, then 5 digits)...")
+    print("Listening for DTMF command (*#, then 6 digits)...")
 
     try:
         cmd = detector.stream_and_detect_duration(stabilizer, sampler, duration)
