@@ -181,7 +181,7 @@ class DTMFDetector:
         self.twist_neg_min = float(twist_neg_min)
 
     def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
-                        sep_db_values, dom_db_values, twist_values):
+                        sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values):
 
         try:
             # Base directory = directory of THIS file
@@ -232,6 +232,14 @@ class DTMFDetector:
 
                 f.write("\ntwist values:\n")
                 for v in twist_values:
+                    f.write(f"{v}\n")
+                
+                f.write("\ntwist_pos_thresholds:\n")
+                for v in twist_pos_values:
+                    f.write(f"{v}\n")
+
+                f.write("\ntwist_neg_thresholds:\n")
+                for v in twist_neg_values:
                     f.write(f"{v}\n")
 
             print(f"Saved debug file: {filename}")
@@ -402,7 +410,7 @@ class DTMFDetector:
 
                 self.save_plotting_txt(
                     digits, amplitudes, block_symbols, SNR_values,
-                    sep_db_values, dom_db_values, twist_values
+                    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
                 )
 
                 return "".join(digits)
@@ -458,7 +466,7 @@ class DTMFDetector:
                     collecting_payload = True
 
         # Save file after loop completes
-        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
+        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values)
         return digit
 
     def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1,
