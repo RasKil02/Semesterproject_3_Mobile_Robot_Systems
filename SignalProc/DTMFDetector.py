@@ -389,15 +389,14 @@ class DTMFDetector:
 
             if not collecting_payload:
 
-                if out == "*":
+                if out == "B":
                     digit = out
-                    print("ACK '*' detected → stopping detection")
+                    print("ACK 'B' detected → stopping detection")
                     return digit
 
                 elif out == "A":
                     digit = out
                     collecting_payload = True
-                    print("Second '#' detected → collecting digits...")
             
             return digit
 

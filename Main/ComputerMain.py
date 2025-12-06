@@ -41,7 +41,7 @@ def main():
 
     while True:
         NACK = 'A'
-        ACK = '*'
+        ACK = 'B'
         proto = Protocol()
         restart_counter = 0
 
