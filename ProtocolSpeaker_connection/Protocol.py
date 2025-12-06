@@ -128,6 +128,10 @@ class Protocol:
                 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
                 tone = 0.5 * (np.sin(2 * np.pi * freqs[0] * t) + np.sin(2 * np.pi * freqs[1] * t))
 
+                # Sikr at tone er et 1D numpy array
+                tone = np.asarray(tone)
+                
+                # Lav stereo tone (2 kanaler)
                 stereo_tone = np.column_stack((tone, tone))
 
                 print("Playing stereo tone:", stereo_tone)
