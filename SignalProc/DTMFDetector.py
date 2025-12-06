@@ -470,7 +470,7 @@ class DTMFDetector:
         return digit
 
     def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1,
-                             twist_pos_max=30.0, twist_neg_min=-30.0,
+                             twist_pos_max=15.0, twist_neg_min=-15.0,
                              twist_pos_default=5.0, twist_neg_default=-5.0):
 
         if rms <= rms_min:
