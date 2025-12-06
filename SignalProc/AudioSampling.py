@@ -27,8 +27,6 @@ class AudioSampler:
         print(f"[AudioSampler] Mode selected: {self.device_mode}")
 
     # ---------------------------------------------------------
-    # Device selection logic
-    # ---------------------------------------------------------
     def searchForDevices(self):
         devs = sd.query_devices()
 
@@ -48,10 +46,15 @@ class AudioSampler:
         # -----------------------
         if self.device_mode == "pc":
             # Choose first device with input channels > 0
-            for i, d in enumerate(devs):
-                if d.get("max_input_channels", 0) > 0:
-                    print(f"[AudioSampler] PC mic found: index {i}, {d['name']}")
-                    return i
+            try:
+                devs = sd.query_devices()
+                for i, d in enumerate(devs):
+                    if d.get('max_input_channels', 0) > 0 and "usb" in d.get("name", "").lower():
+                        return i
+                
+            except:
+                pass
+            return sd.default.device[0]
 
         # -----------------------
         # Fallback: use default input device
@@ -71,42 +74,49 @@ class AudioSampler:
         print(f"[Device] Input device = {info['name']} @ {native_fs} Hz")
         return native_fs
 
-    # ---------------------------------------------------------
-    def start_stream(self, blocksize):
-        self.device = self.searchForDevices()
-        native_fs = self.setupDevice(self.device)
-        self.rec_fs = int(native_fs)
-
-        print(f"[FS] Using native input sample rate: {self.rec_fs} Hz")
-
-        self.stream = sd.InputStream(
-            device=self.device,
-            channels=1,
-            samplerate=self.rec_fs,
-            blocksize=blocksize,
-            dtype="float32"
-        )
-        self.stream.start()
-
-        print("[Audio] Input streaming started...")
-
-    # ---------------------------------------------------------
     def stream_blocks(self, blocksize):
-        if self.stream is None:
-            self.start_stream(blocksize)
+            device = self.searchForDevices()
+            native_fs = self.setupDevice(device)
 
-        while True:
-            block, _ = self.stream.read(blocksize)
-            block = block.flatten()
+            # Always use the device's native sample rate
+            rec_fs = int(native_fs)
+            use_resample = False
+            print(f"[FS] Using native sample rate: {rec_fs} Hz")
 
-            if len(block) > blocksize:
-                block = block[:blocksize]
-            elif len(block) < blocksize:
-                block = np.pad(block, (0, blocksize - len(block)))
+            # Open the input stream
+            with sd.InputStream(
+                device=device,
+                channels=1,
+                samplerate=rec_fs,
+                blocksize=blocksize,
+                dtype="float32"
+            ) as stream:
 
-            yield block
+                buffer = np.zeros(0, dtype=np.float32)
 
-    # ---------------------------------------------------------
+                print("[Audio] Streaming started...")
+
+                while True:
+                    block, _ = stream.read(blocksize)
+                    block = block.flatten()
+
+                    if use_resample:
+                        # Resample block from rec_fs -> self.fs
+                        from scipy.signal import resample_poly
+                        g = np.gcd(rec_fs, self.fs)
+                        up = self.fs // g
+                        down = rec_fs // g
+                        block = resample_poly(block, up, down).astype(np.float32)
+
+                    # If the resampling made the block the wrong size, fix it
+                    if len(block) > blocksize:
+                        block = block[:blocksize]
+                    elif len(block) < blocksize:
+                        pad = np.zeros(blocksize - len(block), dtype=np.float32)
+                        block = np.concatenate((block, pad))
+                        
+                    yield block
+    
     def close(self):
         if self.stream is not None:
             print("[Audio] Closing input stream...")

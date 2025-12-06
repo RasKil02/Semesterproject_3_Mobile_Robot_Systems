@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Find mappen hvor dette script kører fra (ProtocolSpeaker_connection)
+current_dir = os.path.dirname(__file__)  
+project_root = os.path.abspath(os.path.join(current_dir, '..'))  
+sys.path.append(project_root)
+
 import argparse
 from SignalProc.DTMFDetector import DTMFDetector
 from SignalProc.DTMFDetector import DigitStabilizer
@@ -15,7 +23,7 @@ def readCommand():
     # --- Audio sampler (streaming) ---
     sampler = AudioSampler()
 
-    print("Listening for DTMF command (*#, then 5 digits)...")
+    print("Listening for DTMF command (*#, then 6 digits)...")
     cmd = detector.stream_and_detect(stabilizer, sampler, True)
 
     print("\n--- Detected command ---")

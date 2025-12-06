@@ -278,9 +278,6 @@ class DTMFDetector:
 
         snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
 
-        #print all values
-        print(f"LF: {lf} Hz, HF: {hf} Hz | l_abs_db: {l_abs_db:.2f}, h_abs_db: {h_abs_db:.2f}, blk_db: {blk_db:.2f}, l2_db: {l2_db:.2f}, h2_db: {h2_db:.2f}, snr_low_db: {snr_low_db:.2f}, snr_high_db: {snr_high_db:.2f}, sep_ok: {sep_ok}, abs_ok: {abs_ok}, twist: {twist:.2f}, twist_ok: {twist_ok}, dom_ok: {dom_ok}, snr_ok: {snr_ok}")
-
         good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
 
         sym = LUT.get((lf, hf), "?") if good else "?"
@@ -340,6 +337,8 @@ class DTMFDetector:
         twist_values = []
 
         for block in sampler.stream_blocks(self.block):
+            # rms = np.sqrt(np.mean(block**2))
+            # print(f"RMS: {rms:.5f}")
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
@@ -389,7 +388,6 @@ class DTMFDetector:
 
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
-
         digit = ""
         collecting_payload = False
 
@@ -414,7 +412,6 @@ class DTMFDetector:
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
 
-            # NEW clean call
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
@@ -437,8 +434,10 @@ class DTMFDetector:
                     digit = out
                     collecting_payload = True
 
-            self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
-            return digit
+        # Save file after loop completes
+        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values)
+        return digit
+
 
 
 
