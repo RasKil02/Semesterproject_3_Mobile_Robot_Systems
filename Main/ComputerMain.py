@@ -70,7 +70,7 @@ def main():
             # --- None, tom streng eller noget andet → resend normal ---
             else:
                 print("No valid feedback received → Resending command...\n")
-                proto.play_dtmf_command_checksum(8000, proto.command)
+                proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1
 
         sd.stop()

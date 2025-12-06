@@ -135,17 +135,21 @@ class Protocol:
 
     # generate command with set_command. Runs checksum and gets Checksum Remainder.
     def play_dtmf_command_checksum(self, fs, command=None, resend=False):    
+        # Hvis command er None, generer en ny kommando
         if command is None:
-            command = self.set_command()
+            self.set_command()  # Dette sætter self.command
+            command_to_send = self.command
+        else:
+            # Ved genafsendelse, brug den modtagne kommando
+            command_to_send = command
+            # BEHOLD self.command som den er - lad være med at overskrive!
 
         if resend == False:
             seqNr = self.set_sequence_number()
-
-        if resend == True:
+        else:
             seqNr = self.seqNr  # Brug den tidligere sekvensnummer ved genafsendelse
 
-        command = self.command  
-        checksumString = self.calculate_crc_remainder(self.convert4BitCommandTo12BitString(command))
+        checksumString = self.calculate_crc_remainder(self.convert4BitCommandTo12BitString(command_to_send))
         print("Checksum CRC:", checksumString)
 
         # Konvertere 3 bit checksum til string, da play_DTMF_command tager en string som input
@@ -153,7 +157,9 @@ class Protocol:
         print("Checksum DTMF:", checkSumDTMF)
 
         startCommand = self.set_startcommand()  # Kald funktionen korrekt
-        self.play_DTMF_command(startCommand + command + checkSumDTMF + seqNr, fs)
+        
+        # Husk at tilføje duration parameter!
+        self.play_DTMF_command(startCommand + command_to_send + checkSumDTMF + seqNr, fs, duration=0.50)
 
 
     # Converts a decimal string to a 3-bit binary string for each digit. Eksempel 01 -> 000001
