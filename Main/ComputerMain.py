@@ -30,7 +30,6 @@ def readCommandDuration(duration):
     finally:
         # ALWAYS executed
         sampler.close()
-        sd.stop()
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
