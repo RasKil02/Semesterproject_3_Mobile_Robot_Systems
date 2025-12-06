@@ -135,6 +135,7 @@ class Protocol:
                 stereo_tone = np.column_stack((tone, tone))
 
                 print("Playing stereo tone:", stereo_tone)
+                sd.stop()
                 sd.play(stereo_tone, fs)
                 print("Played tone")
                 sd.wait(1)
