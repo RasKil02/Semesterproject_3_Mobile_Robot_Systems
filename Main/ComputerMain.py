@@ -41,13 +41,19 @@ def main():
         NACK = 'A'
         ACK = 'B'
         proto = Protocol()
+        restart_counter = 0
 
         # Send første kommando
         proto.play_dtmf_command_checksum(8000)
 
         while True:
+            
+            if restart_counter >= 4:
+                print("No valid ACK received after 4 attempts. Aborting...\n")
+                break
+            
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(10)
+            FeedbackCommand = readCommandDuration(15)
             print("Received:", FeedbackCommand)
 
             # --- ACK → exit loop ---
@@ -59,11 +65,13 @@ def main():
             elif FeedbackCommand == NACK:
                 print("NACK received. Resending command...\n")
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
+                restart_counter += 1
 
             # --- None, tom streng eller noget andet → resend normal ---
             else:
                 print("No valid feedback received → Resending command...\n")
                 proto.play_dtmf_command_checksum(8000, proto.command)
+                restart_counter += 1
 
         sd.stop()
 

@@ -116,7 +116,7 @@ def main():
         sampler.close()
         sd.stop()
         print("Checksum valid → sending ACK")
-        time.sleep(2)
+        time.sleep(3)
         proto.play_DTMF_command(ack_command, 48000)
 
         retransmit = True
