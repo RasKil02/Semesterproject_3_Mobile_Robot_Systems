@@ -2,6 +2,7 @@ import numpy as np
 import sounddevice as sd
 import time
 
+
 class Protocol:
     def __init__(self, name = "default_protocol"):
         self.name = name
@@ -119,7 +120,6 @@ class Protocol:
 
     # Play the DTMF tones for the given command using numpy and sounddevice libraries
     def play_DTMF_command(self, command, fs, duration=0.50):
-
         dtmf_sequence = self.translateCommandToDTMFfreq(command)
         print("Playing DTMF sequence:")
         print("DTMF Frequencies (Hz):", dtmf_sequence)
@@ -133,10 +133,7 @@ class Protocol:
                 
                 # Lav stereo tone (2 kanaler)
                 stereo_tone = np.column_stack((tone, tone))
-
-                print("Playing stereo tone:", stereo_tone)
-                sd.play(stereo_tone, fs)
-                print("Played tone")
+                sd.play(stereo_tone, fs, device=(None, 3))  # 3 = External Headphones / eller 5 = speakers
                 sd.wait(1)
                 time.sleep(0.28)
 
