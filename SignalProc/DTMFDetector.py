@@ -414,7 +414,7 @@ class DTMFDetector:
             if len(digits) >= 0:
                 print("t_ms:", t_ms_reset, "block_ms:", block_ms)
 
-            if t_ms_reset > 240.0 and len(digits) < 8:
+            if t_ms_reset > 6000.0 and len(digits) < 8:
                 print("Timeout while collecting digits → resetting")
                 digits.clear()
                 t_ms_reset = 0.0
