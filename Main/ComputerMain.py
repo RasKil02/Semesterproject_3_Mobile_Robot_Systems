@@ -75,8 +75,8 @@ def main(inputdevice, outputdevice):
                 print("NACK received\n")
                 print("Using output device ID:", outputdevice)
                 sd.default.device = (inputdevice, outputdevice)
-                if restart_counter == 2:
-                    print("No valid ACK recieved after 3 attempts. Aborting...\n")
+                if restart_counter == 4:
+                    print("No valid ACK recieved after 5 attempts. Aborting...\n")
                     break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1
@@ -84,8 +84,8 @@ def main(inputdevice, outputdevice):
             else:
                 print("No valid feedback received → Resending command...\n")
                 sd.default.device = (inputdevice, outputdevice)
-                if restart_counter == 2:
-                    print("No valid response after 3 attempts. Aborting...\n")
+                if restart_counter == 4:
+                    print("No valid response after 5 attempts. Aborting...\n")
                     break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1    
