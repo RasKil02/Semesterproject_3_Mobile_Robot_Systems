@@ -405,10 +405,10 @@ class DTMFDetector:
 
             if len(digits) == 8:
 
-                self.save_plotting_txt(
-                    digits, amplitudes, block_symbols, SNR_values,
-                    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
-                )
+                #self.save_plotting_txt(
+                #    digits, amplitudes, block_symbols, SNR_values,
+                #    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
+                #)
 
                 return "".join(digits)
 
@@ -464,8 +464,8 @@ class DTMFDetector:
                     break
 
         # Save file after loop completes
-        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                               dom_db_values, twist_values, twist_neg_values, twist_pos_values)
+        #self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, 
+        #                       dom_db_values, twist_values, twist_neg_values, twist_pos_values)
         return digit
 
     def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1, 
