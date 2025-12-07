@@ -380,7 +380,7 @@ class DTMFDetector:
 
             if not out:
                 timer += block_ms
-                if len(digits) < 8 and timer >= 6000.0:
+                if len(digits) < 8 and timer >= 6000.0 and len(digits) > 0:
                     print("Timeout while collecting digits → resetting")
                     digits.clear()
                     collecting_payload = False
