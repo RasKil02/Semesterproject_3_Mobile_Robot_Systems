@@ -371,6 +371,9 @@ class DTMFDetector:
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
+            if out != None:
+                t_ms_reset += block_ms
+
             # plotting
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
@@ -408,13 +411,10 @@ class DTMFDetector:
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
-            # Timeout logic ONLY active during payload mode
-            t_ms_reset += block_ms
-
             if out != None:
                 print("t_ms:", t_ms_reset, "block_ms:", block_ms)
 
-            if t_ms_reset > 320.0 and len(digits) < 8:
+            if t_ms_reset > 6000.0 and len(digits) < 8:
                 print("Timeout while collecting digits → resetting")
                 digits.clear()
                 t_ms_reset = 0.0
