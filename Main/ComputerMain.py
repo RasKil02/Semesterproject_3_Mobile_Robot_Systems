@@ -40,6 +40,7 @@ def readCommandDuration(duration):
     finally:
         # ALWAYS executed
         sampler.close()
+        sd.default.reset()
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
@@ -47,7 +48,7 @@ def readCommandDuration(duration):
     return cmd
 
 
-def main():
+def main(inputdevice, outputdevice):
     while True:
         NACK = 'A'
         ACK = 'B'
@@ -55,15 +56,14 @@ def main():
         restart_counter = 0
 
         # Send første kommando
+
+        sd.default.device = (inputdevice, outputdevice)
         proto.play_dtmf_command_checksum(8000)
         
         while True:
-            if restart_counter >= 4:
-                print("No valid ACK received after 4 attempts. Aborting...\n")
-                break
             
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(15)
+            FeedbackCommand = readCommandDuration(7)
             print("Received:", FeedbackCommand)
 
             if FeedbackCommand == ACK:
@@ -71,12 +71,21 @@ def main():
                 break
 
             elif FeedbackCommand == NACK:
-                print("NACK received. Resending command...\n")
+                print("NACK received\n")
+                print("Using output device ID:", outputdevice)
+                sd.default.device = (inputdevice, outputdevice)
+                if restart_counter == 2:
+                    print("No valid ACK recieved after 3 attempts. Aborting...\n")
+                    break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1
 
             else:
                 print("No valid feedback received → Resending command...\n")
+                sd.default.device = (inputdevice, outputdevice)
+                if restart_counter == 2:
+                    print("No valid response after 3 attempts. Aborting...\n")
+                    break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1    
 
@@ -102,7 +111,7 @@ if __name__ == "__main__":
     print(f"\nUsing devices: Input={sd.default.device[0]}  Output={sd.default.device[1]}")
     
     try:
-        main()
+        main(input_dev, output_dev)
     except KeyboardInterrupt:
         print("\n\nKeyboardInterrupt detected. Exiting gracefully...\n")
     finally:
