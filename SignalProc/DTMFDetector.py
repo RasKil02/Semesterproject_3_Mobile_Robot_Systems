@@ -371,7 +371,7 @@ class DTMFDetector:
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
-            if out != None:
+            if len(digits) >= 0:
                 t_ms_reset += block_ms
 
             # plotting
@@ -411,7 +411,7 @@ class DTMFDetector:
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
-            if out != None:
+            if len(digits) >= 0:
                 print("t_ms:", t_ms_reset, "block_ms:", block_ms)
 
             if t_ms_reset > 6000.0 and len(digits) < 8:
