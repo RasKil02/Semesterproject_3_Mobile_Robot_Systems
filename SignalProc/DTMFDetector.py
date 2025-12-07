@@ -379,7 +379,14 @@ class DTMFDetector:
             )
 
             if not out:
-                continue
+                timer += block_ms
+                if len(digits) < 8 and timer >= 6000.0:
+                    print("Timeout while collecting digits → resetting")
+                    digits.clear()
+                    collecting_payload = False
+                    start_stage = 0
+                    timer = 0.0
+                    continue
 
             if not collecting_payload:
 
@@ -409,14 +416,13 @@ class DTMFDetector:
             print("Detected digits so far:", "".join(digits))
             print(f"Timer: {timer} ms")
 
-
             if len(digits) < 8 and timer >= 6000.0:
                 print("Timeout while collecting digits → resetting")
                 digits.clear()
                 collecting_payload = False
                 start_stage = 0
                 timer = 0.0
-                break
+                continue
 
             if len(digits) == 8:
                 return "".join(digits)
