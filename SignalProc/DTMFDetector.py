@@ -364,25 +364,27 @@ class DTMFDetector:
         twist_neg_values = []
         twist_pos_values = []
 
-        t_ms_reset = 0.0
+        t_ms_reset = 0.0   # timeout timer (only used in payload mode)
 
         for block in sampler.stream_blocks(self.block):
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
-            # NEW clean call
+            # plotting
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
+                min_db_values, sep_db_values, dom_db_values,
+                twist_values, twist_neg_values, twist_pos_values
             )
 
             if not out:
                 continue
-
+            
             if not collecting_payload:
 
+                # Waiting for "*"
                 if start_stage == 0:
                     if out == "*":
                         digits.append(out)
@@ -390,10 +392,12 @@ class DTMFDetector:
                         print("Start '*' detected → waiting for '#'")
                     continue
 
+                # Waiting for "#"
                 elif start_stage == 1:
                     if out == "#":
                         digits.append(out)
                         collecting_payload = True
+                        t_ms_reset = 0.0  
                         print("Second '#' detected → collecting digits...")
                     else:
                         print(f"Expected '#', got '{out}' → resetting")
@@ -401,26 +405,23 @@ class DTMFDetector:
                         start_stage = 0
                     continue
 
-            # collect payload digits
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
-            if len(digits) != 0:
-                t_ms_reset += block_ms
-                if t_ms_reset > 8000.0 and len(digits) < 8:
-                    print("Timeout while collecting digits → resetting")
-                    digits.clear()
-                    t_ms_reset = 0.0
-                    collecting_payload = False
-                    start_stage = 0
+            # Timeout logic ONLY active during payload mode
+            t_ms_reset += block_ms
+
+            if t_ms_reset > 8000.0 and len(digits) < 8:
+                print("Timeout while collecting digits → resetting")
+                digits.clear()
+                t_ms_reset = 0.0
+                collecting_payload = False
+                start_stage = 0
+                continue
 
             if len(digits) == 8:
-
-                #self.save_plotting_txt(
-                #    digits, amplitudes, block_symbols, SNR_values,
-                #    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
-                #)
                 return "".join(digits)
+
 
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
