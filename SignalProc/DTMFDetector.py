@@ -371,7 +371,7 @@ class DTMFDetector:
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
-            if len(digits) >= 0:
+            if len(digits) > 0:
                 print("t_ms_resey:", t_ms_reset, "block_ms:", block_ms)
                 t_ms_reset += block_ms
 
