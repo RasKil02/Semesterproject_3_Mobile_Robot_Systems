@@ -64,7 +64,7 @@ def main(inputdevice, outputdevice):
         while True:
             
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(7)
+            FeedbackCommand = readCommandDuration(8)
             print("Received:", FeedbackCommand)
 
             if FeedbackCommand == ACK:
