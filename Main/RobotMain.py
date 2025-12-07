@@ -97,7 +97,8 @@ def main():
                 sampler = AudioSampler()
                 sampler.close()
                 sd.stop()
-                proto.play_DTMF_command(ack_command, 48000)
+                time.sleep(4)
+                proto.play_DTMF_command(ack_command, 48000, 2)
                 sampler = AudioSampler()
                 continue
 
@@ -109,15 +110,16 @@ def main():
             sampler = AudioSampler()
             sampler.close()
             sd.stop()
-            proto.play_DTMF_command(nack_command, 48000)
+            time.sleep(4)
+            proto.play_DTMF_command(nack_command, 48000, 2)
             sampler = AudioSampler()
             continue
 
         sampler.close()
         sd.stop()
         print("Checksum valid → sending ACK")
-        time.sleep(5)
-        proto.play_DTMF_command(ack_command, 48000)
+        time.sleep(4)
+        proto.play_DTMF_command(ack_command, 48000, 2)
 
         retransmit = True
 
