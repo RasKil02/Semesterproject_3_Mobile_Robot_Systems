@@ -420,7 +420,7 @@ class DTMFDetector:
                 t_ms_reset = 0.0
                 collecting_payload = False
                 start_stage = 0
-                continue
+                break
 
             if len(digits) == 8:
                 return "".join(digits)
