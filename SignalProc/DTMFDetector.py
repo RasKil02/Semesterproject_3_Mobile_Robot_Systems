@@ -408,6 +408,7 @@ class DTMFDetector:
                 digits.clear()
                 collecting_payload = False
                 start_stage = 0
+                t_ms = 0.0
                 
 
             if len(digits) == 8:
