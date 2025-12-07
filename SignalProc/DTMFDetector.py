@@ -433,6 +433,7 @@ class DTMFDetector:
         twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
+            print(f"RMS amplitude: {np.sqrt(np.mean(block.astype(float)**2)):.5f}")
 
             if t_ms > max_time_ms:
                 print("Duration exceeded, stopping detection.")
