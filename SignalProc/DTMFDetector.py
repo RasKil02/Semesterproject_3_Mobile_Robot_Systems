@@ -405,9 +405,6 @@ class DTMFDetector:
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
-            if out != None:
-                print("t_ms:", t_ms, "block_ms:", block_ms)
-
             if len(digits) != 0:
                 t_ms_reset += block_ms
                 if t_ms_reset > 8000.0 and len(digits) < 8:

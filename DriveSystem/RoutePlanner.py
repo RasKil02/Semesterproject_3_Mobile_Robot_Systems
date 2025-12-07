@@ -61,8 +61,10 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Reads first 6 bits to determine destination
     def destDecision(self, command: str) -> int:
         # first 6 bits determine destination
+        print("Command received in RoutePlanner:", command)
         table = {"000000": 0, "000001": 1, "000010": 2, "000011": 3}
         dest_bits = command[:6]
+        print("Destination bits:", dest_bits)
         return table.get(dest_bits, 0)
     
     # Reads next 6 bits to determine number of supplies
