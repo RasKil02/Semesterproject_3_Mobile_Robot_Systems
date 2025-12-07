@@ -1,0 +1,28 @@
+=== DTMF DEBUG DATA ===
+Detected digits: B
+
+--- Threshold Settings ---
+min_db threshold: -20.0
+sep_db threshold: 7.0
+dom_db threshold: 12.0
+snr_db threshold: 12.0
+twist_pos_db: 5.0
+twist_neg_db: -5.0
+
+--- Collected Metrics ---
+
+Amplitude samples:
+
+Detected symbols per block:
+
+SNR values:
+
+sep_db values:
+
+dom_db values:
+
+twist values:
+
+twist_pos_thresholds:
+
+twist_neg_thresholds:

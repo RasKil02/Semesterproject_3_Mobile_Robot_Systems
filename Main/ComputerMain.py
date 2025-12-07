@@ -15,6 +15,8 @@ from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 
+proto = Protocol()
+
 def choose_device(prompt):
     print(prompt)
     user_input = input().strip()
@@ -52,7 +54,6 @@ def main(inputdevice, outputdevice):
     while True:
         NACK = 'A'
         ACK = 'B'
-        proto = Protocol()
         restart_counter = 0
 
         # Send første kommando
