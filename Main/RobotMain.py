@@ -93,11 +93,12 @@ def main():
 
         if retransmit:
             if command[7] == seqNrDigit:
-                print("Expected new command but received old command. Sending ACK")
+                print("Expected new command but received old command. Sending ACK to reset")
                 sampler = AudioSampler()
                 sampler.close()
                 sd.stop()
-                proto.play_DTMF_command(ack_command, 48000)
+                time.sleep(4)
+                proto.play_DTMF_command(ack_command, 48000, 2)
                 sampler = AudioSampler()
                 continue
 
@@ -109,15 +110,16 @@ def main():
             sampler = AudioSampler()
             sampler.close()
             sd.stop()
-            proto.play_DTMF_command(nack_command, 48000)
+            time.sleep(4)
+            proto.play_DTMF_command(nack_command, 48000, 2)
             sampler = AudioSampler()
             continue
 
         sampler.close()
         sd.stop()
         print("Checksum valid → sending ACK")
-        time.sleep(3)
-        proto.play_DTMF_command(ack_command, 48000)
+        time.sleep(4)
+        proto.play_DTMF_command(ack_command, 48000, 2)
 
         retransmit = True
 

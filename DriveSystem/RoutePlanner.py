@@ -61,6 +61,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Reads first 6 bits to determine destination
     def destDecision(self, command: str) -> int:
         # first 6 bits determine destination
+        print("Command received in RoutePlanner:", command)
         table = {"000000": 0, "000001": 1, "000010": 2, "000011": 3}
         dest_bits = command[:6]
         return table.get(dest_bits, 0)
@@ -129,7 +130,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         rotation_speed = self.DegreesToAngularSpeed(90)
 
         speed = 0.08  # m/s
-        durations = {1: 2.0, 2: 4.0, 3: 6.0, 4: 8.0}
+        durations = {0: 2.0, 1: 4.0, 2: 6.0, 3: 8.0}
 
         if dest in durations:
             self.get_logger().info(f'Routing to Location {dest}')

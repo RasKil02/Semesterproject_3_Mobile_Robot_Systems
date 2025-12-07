@@ -353,6 +353,7 @@ class DTMFDetector:
 
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
+        timer = 0.0
 
         amplitudes = []
         block_symbols = []
@@ -369,18 +370,31 @@ class DTMFDetector:
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
 
-            # NEW clean call
+            # plotting
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
+                min_db_values, sep_db_values, dom_db_values,
+                twist_values, twist_neg_values, twist_pos_values
             )
+
+            if collecting_payload:
+                timer += block_ms
+
+            if len(digits) < 8 and timer >= 6000.0 and len(digits) > 0:
+                    print("Timeout while collecting digits → resetting")
+                    digits.clear()
+                    collecting_payload = False
+                    start_stage = 0
+                    timer = 0.0
+                    continue
 
             if not out:
                 continue
 
             if not collecting_payload:
 
+                # Waiting for "*"
                 if start_stage == 0:
                     if out == "*":
                         digits.append(out)
@@ -388,6 +402,7 @@ class DTMFDetector:
                         print("Start '*' detected → waiting for '#'")
                     continue
 
+                # Waiting for "#"
                 elif start_stage == 1:
                     if out == "#":
                         digits.append(out)
@@ -399,18 +414,12 @@ class DTMFDetector:
                         start_stage = 0
                     continue
 
-            # collect payload digits
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
 
             if len(digits) == 8:
-
-                #self.save_plotting_txt(
-                #    digits, amplitudes, block_symbols, SNR_values,
-                #    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
-                #)
-
                 return "".join(digits)
+
 
             
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
