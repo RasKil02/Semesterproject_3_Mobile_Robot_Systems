@@ -353,6 +353,7 @@ class DTMFDetector:
 
         t_ms = 0.0
         block_ms = 1000.0 * self.block / self.fs
+        timer = 0.0
 
         amplitudes = []
         block_symbols = []
@@ -368,11 +369,6 @@ class DTMFDetector:
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
-
-            if len(digits) > 0:
-                print("Length of digits collected:", len(digits))
-                print("t_ms_resey:", t_ms_reset, "block_ms:", block_ms)
-                t_ms_reset += block_ms
 
             # plotting
             self.collect_plot_metrics(
@@ -406,18 +402,15 @@ class DTMFDetector:
                         digits.clear()
                         start_stage = 0
                     continue
+            
+            timer += block_ms
 
-            digits.append(out)
-            print("Detected digits so far:", "".join(digits))
-
-            print("fuck")
-
-            if t_ms_reset > 6000.0 and len(digits) < 8:
+            if len(digits) < 8 and timer >= 6000.0:
                 print("Timeout while collecting digits → resetting")
                 digits.clear()
-                t_ms_reset = 0.0
                 collecting_payload = False
                 start_stage = 0
+                timer = 0.0
                 break
 
             if len(digits) == 8:
