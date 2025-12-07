@@ -457,11 +457,11 @@ class DTMFDetector:
                 if out == "B":
                     digit = out
                     print("ACK 'B' detected → stopping detection")
-                    collecting_payload = True
+                    break
 
                 elif out == "A":
                     digit = out
-                    collecting_payload = True
+                    break
 
         # Save file after loop completes
         self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, 
