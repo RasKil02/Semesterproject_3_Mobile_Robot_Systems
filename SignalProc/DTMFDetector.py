@@ -345,7 +345,6 @@ class DTMFDetector:
         twist_neg_values.append(metrics['twist_neg_threshold'])
         twist_pos_values.append(metrics['twist_pos_threshold'])
 
-    
     def stream_and_detect(self, stabilizer, sampler, plot=False):
 
         digits = []
@@ -366,8 +365,6 @@ class DTMFDetector:
         twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
-            # rms = np.sqrt(np.mean(block**2))
-            # print(f"RMS: {rms:.5f}")
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
             t_ms += block_ms
@@ -466,12 +463,13 @@ class DTMFDetector:
                     collecting_payload = True
 
         # Save file after loop completes
-        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values)
+        self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                               dom_db_values, twist_values, twist_neg_values, twist_pos_values)
         return digit
 
-    def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1,
+    def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1, 
                              twist_pos_max=30.0, twist_neg_min=-30.0,
-                             twist_pos_default=5.0, twist_neg_default=-5.0):
+                             twist_pos_default=5.0, twist_neg_default=-5.0): # Values twist_pos_max and twist_neg_min are overwritten in init
 
         if rms <= rms_min:
             # Very low RMS → no tone → be strict
