@@ -381,7 +381,7 @@ class DTMFDetector:
 
             if not out:
                 continue
-            
+
             if not collecting_payload:
 
                 # Waiting for "*"
@@ -410,6 +410,9 @@ class DTMFDetector:
 
             # Timeout logic ONLY active during payload mode
             t_ms_reset += block_ms
+
+            if out != None:
+                print("t_ms:", t_ms_reset, "block_ms:", block_ms)
 
             if t_ms_reset > 8000.0 and len(digits) < 8:
                 print("Timeout while collecting digits → resetting")
