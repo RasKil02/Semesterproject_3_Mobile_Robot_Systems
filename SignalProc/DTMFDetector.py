@@ -364,6 +364,8 @@ class DTMFDetector:
         twist_neg_values = []
         twist_pos_values = []
 
+        t_ms_reset = 0.0
+
         for block in sampler.stream_blocks(self.block):
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
@@ -406,13 +408,14 @@ class DTMFDetector:
             if out != None:
                 print("t_ms:", t_ms, "block_ms:", block_ms)
 
-            if len(digits) != 8 and t_ms > 10000.0:
-                print("Timeout while collecting digits → resetting")
-                digits.clear()
-                collecting_payload = False
-                start_stage = 0
-                t_ms = 0.0
-                
+            if len(digits) != 0:
+                t_ms_reset += block_ms
+                if t_ms_reset > 8000.0 and len(digits) < 8:
+                    print("Timeout while collecting digits → resetting")
+                    digits.clear()
+                    t_ms_reset = 0.0
+                    collecting_payload = False
+                    start_stage = 0
 
             if len(digits) == 8:
 
@@ -420,7 +423,6 @@ class DTMFDetector:
                 #    digits, amplitudes, block_symbols, SNR_values,
                 #    sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
                 #)
-
                 return "".join(digits)
 
             
