@@ -1,6 +1,8 @@
 ```mermaid
 flowchart TD
-    A[Input command] --> B[Computer plays command with DTMF sounds]
+    A[Input command] --> U[Sets Counter = 0]
+
+    U --> B[Computer plays command with DTMF sounds]
     B --> C[Computer sets timeout and listen for respons]
 
     C --> D[Robot listens for DTMF sounds and decodes]
@@ -9,8 +11,9 @@ flowchart TD
     E --> |No| W[Wait for timeout]
 
     %% Dummy node to avoid unwanted arrow from W → V
-    W --> X(( )) --> B
-
+    W --> X((Counter += 1)) --> Z{Is Counter >= 4?}
+    Z --> |No| B
+    Z --> |Yes| A
     V --> F{is valid?}
     F --> |Yes| G[Run RoutePlanner with command]
     G --> H[Send ACK to waa]
