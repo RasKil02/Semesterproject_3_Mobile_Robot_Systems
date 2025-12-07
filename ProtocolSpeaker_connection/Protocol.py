@@ -133,7 +133,7 @@ class Protocol:
                 
                 # Lav stereo tone (2 kanaler)
                 stereo_tone = np.column_stack((tone, tone))
-                sd.play(stereo_tone, fs, device=(None, 2))  # 3 = External Headphones / eller 5 = speakers
+                sd.play(stereo_tone, fs)  # 3 = External Headphones / eller 5 = speakers
                 sd.wait(1)
                 time.sleep(0.28)
 
