@@ -15,12 +15,19 @@ from SignalProc.AudioSampling import AudioSampler
 import time
 import argparse
 
-def print_output_device():
-    dev = sd.default.device
-    output_id = dev[1]  # (input_id, output_id)
-    device_info = sd.query_devices(output_id)
-    print(f"Using audio output device: {device_info['name']} (ID {output_id})")
+proto = Protocol()
 
+def choose_device(prompt):
+    print(prompt)
+    user_input = input().strip()
+
+    if user_input == "":
+        return None  # Use system default
+    try:
+        return int(user_input)
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        return choose_device(prompt)
 
 def readCommandDuration(duration):
 
@@ -35,6 +42,7 @@ def readCommandDuration(duration):
     finally:
         # ALWAYS executed
         sampler.close()
+        sd.default.reset()
 
     print("\n--- Detected command ---")
     print(cmd if cmd else "(none)")
@@ -42,26 +50,21 @@ def readCommandDuration(duration):
     return cmd
 
 
-def main():
-
-    print_output_device()
-
+def main(inputdevice, outputdevice):
     while True:
         NACK = 'A'
         ACK = 'B'
-        proto = Protocol()
         restart_counter = 0
 
         # Send første kommando
+
+        sd.default.device = (inputdevice, outputdevice)
         proto.play_dtmf_command_checksum(8000)
         
         while True:
-            if restart_counter >= 4:
-                print("No valid ACK received after 4 attempts. Aborting...\n")
-                break
             
             print("Waiting for possible NACK or ACK response\n")
-            FeedbackCommand = readCommandDuration(15)
+            FeedbackCommand = readCommandDuration(7)
             print("Received:", FeedbackCommand)
 
             if FeedbackCommand == ACK:
@@ -69,19 +72,47 @@ def main():
                 break
 
             elif FeedbackCommand == NACK:
-                print("NACK received. Resending command...\n")
+                print("NACK received\n")
+                print("Using output device ID:", outputdevice)
+                sd.default.device = (inputdevice, outputdevice)
+                if restart_counter == 2:
+                    print("No valid ACK recieved after 3 attempts. Aborting...\n")
+                    break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1
 
             else:
                 print("No valid feedback received → Resending command...\n")
+                sd.default.device = (inputdevice, outputdevice)
+                if restart_counter == 2:
+                    print("No valid response after 3 attempts. Aborting...\n")
+                    break
                 proto.play_dtmf_command_checksum(8000, proto.command, True)
                 restart_counter += 1    
 
 
 if __name__ == "__main__":
+    print("\n=== Audio Devices ===")
+    print(sd.query_devices())
+
+    input_dev = choose_device(
+        "\nEnter INPUT device ID (microphone) or press Enter for default:"
+    )
+    output_dev = choose_device(
+        "Enter OUTPUT device ID (speaker) or press Enter for default:"
+    )
+
+    # Build tuple for sounddevice
+    current = sd.default.device
+    sd.default.device = (
+        input_dev if input_dev is not None else current[0],
+        output_dev if output_dev is not None else current[1]
+    )
+
+    print(f"\nUsing devices: Input={sd.default.device[0]}  Output={sd.default.device[1]}")
+    
     try:
-        main()
+        main(input_dev, output_dev)
     except KeyboardInterrupt:
         print("\n\nKeyboardInterrupt detected. Exiting gracefully...\n")
     finally:

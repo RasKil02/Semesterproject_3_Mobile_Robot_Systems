@@ -433,6 +433,7 @@ class DTMFDetector:
         twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
+            print(f"RMS amplitude: {np.sqrt(np.mean(block.astype(float)**2)):.5f}")
 
             if t_ms > max_time_ms:
                 print("Duration exceeded, stopping detection.")
@@ -456,11 +457,11 @@ class DTMFDetector:
                 if out == "B":
                     digit = out
                     print("ACK 'B' detected → stopping detection")
-                    collecting_payload = True
+                    break
 
                 elif out == "A":
                     digit = out
-                    collecting_payload = True
+                    break
 
         # Save file after loop completes
         self.save_plotting_txt(digit, amplitudes, block_symbols, SNR_values, sep_db_values, 
