@@ -364,8 +364,6 @@ class DTMFDetector:
         twist_neg_values = []
         twist_pos_values = []
 
-        t_ms_reset = 0.0   # timeout timer (only used in payload mode)
-
         for block in sampler.stream_blocks(self.block):
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
