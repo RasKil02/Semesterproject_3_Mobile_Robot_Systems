@@ -378,15 +378,19 @@ class DTMFDetector:
                 twist_values, twist_neg_values, twist_pos_values
             )
 
-            if not out:
+            if collecting_payload:
                 timer += block_ms
-                if len(digits) < 8 and timer >= 6000.0 and len(digits) > 0:
+
+            if len(digits) < 8 and timer >= 6000.0 and len(digits) > 0:
                     print("Timeout while collecting digits → resetting")
                     digits.clear()
                     collecting_payload = False
                     start_stage = 0
                     timer = 0.0
                     continue
+
+            if not out:
+                continue
 
             if not collecting_payload:
 
@@ -409,8 +413,6 @@ class DTMFDetector:
                         digits.clear()
                         start_stage = 0
                     continue
-            
-            timer += block_ms
 
             digits.append(out)
             print("Detected digits so far:", "".join(digits))
