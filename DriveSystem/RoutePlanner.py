@@ -39,25 +39,23 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         msg.twist.angular.z = float(w)
         return msg
 
+    # Publishes velocity commands for a specified duration
     def publish_vw_for_duration(self, v: float, w: float, duration: float):
         duration = max(0.0, float(duration))
-        start_t = time.monotonic()
-
-        while rclpy.ok():
-            now = time.monotonic()
-            if now - start_t >= duration:
-                break
-
+        end_t = time.monotonic() + duration
+        next_tick = time.monotonic()
+        while rclpy.ok() and time.monotonic() < end_t:
             self.pub.publish(self._make_msg(v, w))
             rclpy.spin_once(self, timeout_sec=0.0)
-
-            # sleep exactly the remaining time to next tick
-            next_tick = start_t + ((now - start_t) // self.dt + 1) * self.dt
+            next_tick += self.dt
             sleep_s = next_tick - time.monotonic()
             if sleep_s > 0:
                 time.sleep(sleep_s)
+        # ensure stop after each segment
+        self.pub.publish(self._make_msg(0.0, 0.0))
 
-        # ensure stop
+    # Stops the robot with an optional pause
+    def stop(self, pause: float = 0.2):
         self.pub.publish(self._make_msg(0.0, 0.0))
 
 
