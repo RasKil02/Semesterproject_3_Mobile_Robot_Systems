@@ -1,74 +1,103 @@
 import time
 import sys
+import select
 from machine import Pin, PWM
 
+# ----------------------------------------------------
+# Safe flush for Thonny (FileIO has no .flush())
+# ----------------------------------------------------
+def safe_flush():
+    try:
+        sys.stdout.flush()
+    except:
+        pass
 
-def run_motor(duration):
-    end = time.ticks_add(time.ticks_ms(), int(duration*1000))
-    while time.ticks_diff(end, time.ticks_ms()) > 0:
-        time.sleep(0.01)  # keep USB alive
+
+# ----------------------------------------------------
+# Non-blocking input setup
+# ----------------------------------------------------
+poll = select.poll()
+poll.register(sys.stdin, select.POLLIN)
 
 
-def supplyMotor(supplyID: int, duty: int = int(0.5 * 65535), duration: float = 10.0):
-    """
-    supplyID: motor number (0–3)
-    duty: PWM duty cycle (0–65535 on RP2040)
-    duration: how long the motor runs (seconds)
-    """
+# ----------------------------------------------------
+# Motor run function
+# ----------------------------------------------------
+def run_motor(pin_num, duty, duration):
 
-    if supplyID < 0 or supplyID > 3:
-        print('Invalid supply number')
-        return
-
-    pin_num = supplyID + 15  # Pins 15,16,17,18 for motors
-    pin_obj = Pin(pin_num, Pin.OUT)
-
-    # Start PWM
-    pwm = PWM(pin_obj)
+    pin = Pin(pin_num, Pin.OUT)
+    pwm = PWM(pin)
     pwm.freq(5000)
-
-    print("Activating supply motor", supplyID)
     pwm.duty_u16(duty)
 
-    run_motor(duration)
+    print(f"[PICO] Motor on pin {pin_num} running for {duration}s")
+    safe_flush()
 
-    # Turn off PWM
+    end = time.ticks_add(time.ticks_ms(), int(duration * 1000))
+
+    # Non-blocking loop to keep USB alive
+    while time.ticks_diff(end, time.ticks_ms()) > 0:
+        time.sleep(0.01)
+
     pwm.duty_u16(0)
     pwm.deinit()
-    pin_obj.value(0)
+    pin.value(0)
 
-    print("Deactivating supply motor", supplyID)
-
-
-def send_ack(supplyID):
-    """Send confirmation back to the Pi."""
-    msg = f"received {supplyID}\n"
-    sys.stdout.write(msg)
-    sys.stdout.flush()
+    print(f"[PICO] Motor on pin {pin_num} stopped")
+    safe_flush()
 
 
+# ----------------------------------------------------
+# Main loop
+# ----------------------------------------------------
 def main():
-    # Debug LED on pin 22
-    pin20 = Pin(20, Pin.OUT)
-    pin20.value(1)
 
-    print("Pico ready. Listening on USB serial...")
+    # Debug pins (if needed)
+    Pin(20, Pin.OUT).value(0)
+    Pin(19, Pin.OUT).value(0)
+    Pin(22, Pin.OUT).value(0)
+    Pin(15, Pin.OUT).value(1)
+
+    print("[PICO] Ready. Listening for commands...")
+    safe_flush()
 
     while True:
-        data = sys.stdin.buffer.read(1)   # read ONE byte from USB
-        if data:
+
+        # Non-blocking USB serial read
+        if poll.poll(0):
+            line = sys.stdin.readline()
+
+            if not line:
+                continue
+
             try:
-                supply_id_str = data.decode().strip()
-                print("Received:", supply_id_str)
+                supply_id = int(line.strip())
+            except:
+                print("[PICO] Invalid input")
+                safe_flush()
+                continue
 
-                supply_id = int(supply_id_str)
+            # Valid motor IDs: 0–3 → pins 15–18
+            if 0 <= supply_id <= 3:
+                pin_num = 15 + supply_id
 
-                supplyMotor(supply_id)
+                run_motor(
+                    pin_num=pin_num,
+                    duty=int(0.7 * 65535),
+                    duration=10.0,
+                )
 
-                send_ack(supply_id)
+                # ACK back to Raspberry Pi
+                print(f"ACK:{supply_id}")
+                safe_flush()
 
-            except Exception as e:
-                print("Error:", e)
+            else:
+                print("[PICO] ID out of range")
+                safe_flush()
+
+        time.sleep(0.01)
 
 
 main()
+
+

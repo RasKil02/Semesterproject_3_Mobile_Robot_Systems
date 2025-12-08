@@ -1,18 +1,21 @@
 from DriveSystem.PicoMotorController import PicoMotorController
 import time
 
-picosender = PicoMotorController()  
-
 def main():
-    print("Sending supply ID 2 to Pico...")
-    picosender.send_supply_id(2)
+    pico = PicoMotorController()
+
+    print("Sending command 2...")
+    ack = pico.send_supply_id(2)
+    print("Pico replied:", ack)
 
     time.sleep(4)
 
-    print("Sending supply ID 1 to Pico...")
-    picosender.send_supply_id(1)
+    print("Sending command 1...")
+    ack = pico.send_supply_id(1)
+    print("Pico replied:", ack)
+
+    pico.close()
 
 
 if __name__ == "__main__":
     main()
-    picosender.close()

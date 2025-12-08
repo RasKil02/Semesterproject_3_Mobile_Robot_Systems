@@ -2,25 +2,17 @@ import serial
 import time
 
 class PicoMotorController:
-    """
-    Sends simple one-byte commands (e.g., b"1") to the Pico via USB serial.
-    """
-
-    def __init__(self, port="/dev/serial/by-id/usb-MicroPython_Board_in_FS_mode_e6613008e37c6f34-if00", baud=115200):
-        self.port = port
-        self.baud = baud
-
-        # Open serial connection to Pico USB
+    def __init__(self, port="/dev/serial/by-id/usb-MicroPython_*", baud=115200):
         self.ser = serial.Serial(port, baud, timeout=1)
-        time.sleep(2)  # allow Pico to reboot when serial opens
+        time.sleep(2)  # Allow Pico reconnect after open
 
     def send_supply_id(self, supply_id: int):
-        # Send the ID as a single byte/character
-        self.ser.write(str(supply_id).encode())
+        msg = f"{supply_id}\n".encode()
+        self.ser.write(msg)
+
+        # Wait for ACK
+        ack = self.ser.readline().decode().strip()
+        return ack
 
     def close(self):
         self.ser.close()
-
-    def read_ack(self):
-        return self.ser.readline().decode().strip()
-
