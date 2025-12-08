@@ -77,6 +77,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
 
     # Drives straight for a given speed and duration
     def driveStraight(self, speed: float, duration: float):
+        print("In driveStraight with speed:", speed, "duration:", duration)
         self.publish_vw_for_duration(speed, 0.0, duration)
         self.stop(0.3)
 
@@ -98,6 +99,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Executes the full route: drive out, rotate, drop supplies, return home
     def executeRoute(self, supplies: int, speed: float, duration: float, angular_speed: float):
         # out
+        print("In executeRoute with supplies:", supplies, "speed:", speed, "duration:", duration, "angular_speed:", angular_speed)
         self.driveStraight(speed, duration)
         # rotate 90° in ~2s
         self.rotate(angular_speed, 2.0)
@@ -131,7 +133,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         rotation_speed = self.DegreesToAngularSpeed(90)
 
         speed = 0.08  # m/s
-        durations = {0: 2.0, 1: 4.0, 2: 6.0, 3: 8.0}
+        durations = {0: 1.0, 1: 3.0, 2: 5.0, 3: 7.0}
 
         if dest in durations:
             self.get_logger().info(f'Routing to Location {dest}')
