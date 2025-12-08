@@ -45,7 +45,12 @@ def run_motor(pin_num, duty, duration):
 
     print(f"[PICO] Motor on pin {pin_num} stopped")
     safe_flush()
-
+    
+def send_ack(supplyID):
+    """Send confirmation back to the Pi."""
+    msg = f"received {supplyID}\n"
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 # ----------------------------------------------------
 # Main loop
@@ -53,10 +58,8 @@ def run_motor(pin_num, duty, duration):
 def main():
 
     # Debug pins (if needed)
-    Pin(20, Pin.OUT).value(0)
-    Pin(19, Pin.OUT).value(0)
-    Pin(22, Pin.OUT).value(0)
-    Pin(15, Pin.OUT).value(1)
+    Pin(15, Pin.OUT).value(0)
+    Pin(13, Pin.OUT).value(1)
 
     print("[PICO] Ready. Listening for commands...")
     safe_flush()
@@ -77,18 +80,18 @@ def main():
                 safe_flush()
                 continue
 
-            # Valid motor IDs: 0–3 → pins 15–18
-            if 0 <= supply_id <= 3:
-                pin_num = 15 + supply_id
+            # Valid motor IDs: 1-2 → pins 17–18
+            if 0 < supply_id < 3:
+                pin_num = 16 + supply_id
 
                 run_motor(
                     pin_num=pin_num,
                     duty=int(0.7 * 65535),
-                    duration=10.0,
+                    duration=1.0,
                 )
 
                 # ACK back to Raspberry Pi
-                print(f"ACK:{supply_id}")
+                send_ack(supply_id)
                 safe_flush()
 
             else:
@@ -99,5 +102,6 @@ def main():
 
 
 main()
+
 
 
