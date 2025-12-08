@@ -1,68 +1,28 @@
 import sys
 import time
-import select
 from machine import Pin, PWM
 
-# ---------- MOTOR FUNCTION ----------
-def run_motor(pin_num, duty, duration):
-    pin = Pin(pin_num, Pin.OUT)
-    pwm = PWM(pin)
-    pwm.freq(5000)
-    pwm.duty_u16(duty)
+# --- PWM setup ---
+pwm_pin = PWM(Pin(15))   # Change to the GPIO pin you're using
+pwm_pin.freq(1000)       # 1 kHz PWM
+pwm_pin.duty_u16(0)      # Start OFF
 
-    sys.stdout.write(f"[PICO] motor {pin_num} ON for {duration}s\n")
+def activate_pwm():
+    pwm_pin.duty_u16(32768)   # 50% duty (0.5)
+    time.sleep(2)             # ON for 2 seconds
+    pwm_pin.duty_u16(0)       # OFF
 
-    end = time.ticks_ms() + int(duration * 1000)
+print("Waiting for USB serial input (1 or 2)...")
 
-    # Keep USB alive + timeout-safe
-    while time.ticks_ms() < end:
-        time.sleep(0.01)
-
-    # --- ALWAYS shut motor off, even if USB freezes ---
-    pwm.duty_u16(0)
-    pwm.deinit()
-    pin.value(0)
-
-    sys.stdout.write(f"[PICO] motor {pin_num} OFF\n")
-
-
-def send_ack(supply_id):
-    sys.stdout.write(f"ACK {supply_id}\n")
-
-
-# ---------- NON-BLOCKING SERIAL SETUP ----------
-poller = select.poll()
-poller.register(sys.stdin, select.POLLIN)
-
-sys.stdout.write("[PICO] READY\n")
-
-# ---------- MAIN LOOP ----------
 while True:
+    # Read one byte from USB CDC
+    char = sys.stdin.read(1)
 
-    # Check if any input available (non-blocking)
-    if poller.poll(0):
+    if char is None:
+        continue  # no data yet
 
-        line = sys.stdin.readline().strip()
+    if char in ("1", "2"):
+        print("Received:", char)
+        activate_pwm()
 
-        # Ignore empty lines or garbage
-        if not line.isdigit():
-            sys.stdout.write("[PICO] invalid input\n")
-            continue
-
-        supply = int(line)
-
-        # ------------ COMMANDS -------------
-        if supply == 1:
-            run_motor(17, int(0.7 * 65535), 1.0)
-
-        elif supply == 2:
-            run_motor(18, int(0.7 * 65535), 1.0)
-
-        else:
-            sys.stdout.write("[PICO] ID out of range\n")
-            continue
-
-        send_ack(supply)
-
-    time.sleep(0.01)
 
