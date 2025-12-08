@@ -10,8 +10,7 @@ def run_motor(pin_num, duty, duration):
     pwm.freq(5000)
     pwm.duty_u16(duty)
 
-    print(f"[PICO] motor {pin_num} ON for {duration}s")
-    sys.stdout.flush()
+    sys.stdout.write(f"[PICO] motor {pin_num} ON for {duration}s\n")
 
     end = time.ticks_ms() + int(duration * 1000)
 
@@ -24,22 +23,18 @@ def run_motor(pin_num, duty, duration):
     pwm.deinit()
     pin.value(0)
 
-    print(f"[PICO] motor {pin_num} OFF")
-    sys.stdout.flush()
+    sys.stdout.write(f"[PICO] motor {pin_num} OFF\n")
 
 
 def send_ack(supply_id):
     sys.stdout.write(f"ACK {supply_id}\n")
-    sys.stdout.flush()
 
 
 # ---------- NON-BLOCKING SERIAL SETUP ----------
 poller = select.poll()
 poller.register(sys.stdin, select.POLLIN)
 
-
-print("[PICO] READY\n")
-sys.stdout.flush()
+sys.stdout.write("[PICO] READY\n")
 
 # ---------- MAIN LOOP ----------
 while True:
@@ -51,8 +46,7 @@ while True:
 
         # Ignore empty lines or garbage
         if not line.isdigit():
-            print("[PICO] invalid input")
-            sys.stdout.flush()
+            sys.stdout.write("[PICO] invalid input\n")
             continue
 
         supply = int(line)
@@ -65,10 +59,10 @@ while True:
             run_motor(18, int(0.7 * 65535), 1.0)
 
         else:
-            print("[PICO] ID out of range")
-            sys.stdout.flush()
+            sys.stdout.write("[PICO] ID out of range\n")
             continue
 
         send_ack(supply)
 
     time.sleep(0.01)
+
