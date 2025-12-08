@@ -2,7 +2,7 @@ import serial
 import time
 
 class PicoMotorController:
-    def __init__(self, port="/dev/serial/by-id/usb-MicroPython_*", baud=115200):
+    def __init__(self, port="/dev/serial/by-id/usb-MicroPython_Board_in_FS_mode_e6613008e37c6f34-if00", baud=115200):
         self.ser = serial.Serial(port, baud, timeout=1)
         time.sleep(2)  # Allow Pico reconnect after open
 
