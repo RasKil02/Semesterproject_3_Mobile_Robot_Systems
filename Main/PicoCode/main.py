@@ -2,7 +2,7 @@ import time
 import sys
 from machine import Pin, PWM
 
-def supplyMotor(supplyID: int, duty: int = int(0.2 * 65535), duration: float = 10.0):
+def supplyMotor(supplyID: int, duty: int = int(0.5 * 65535), duration: float = 10.0):
     """
     supplyID: motor number (0–3)
     duty: PWM duty cycle (0–65535 on RP2040)
