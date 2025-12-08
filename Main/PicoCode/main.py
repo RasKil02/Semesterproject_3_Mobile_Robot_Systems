@@ -1,28 +1,32 @@
 import sys
 import time
-from machine import Pin, PWM
+from machine import Pin
 
-# --- PWM setup ---
-pwm_pin = PWM(Pin(15))   # Change to the GPIO pin you're using
-pwm_pin.freq(1000)       # 1 kHz PWM
-pwm_pin.duty_u16(0)      # Start OFF
+# Setup pins as output
+pin1 = Pin(17, Pin.OUT)
+pin2 = Pin(18, Pin.OUT)
 
-def activate_pwm():
-    pwm_pin.duty_u16(32768)   # 50% duty (0.5)
-    time.sleep(2)             # ON for 2 seconds
-    pwm_pin.duty_u16(0)       # OFF
+# Ensure both are low at start
+pin1.low()
+pin2.low()
+
+def activate_pin(pin):
+    pin.high()
+    time.sleep(0.02)
+    pin.low()
 
 print("Waiting for USB serial input (1 or 2)...")
 
 while True:
-    # Read one byte from USB CDC
     char = sys.stdin.read(1)
 
-    if char is None:
-        continue  # no data yet
+    if not char:
+        continue
 
-    if char in ("1", "2"):
-        print("Received:", char)
-        activate_pwm()
+    if char == "1":
+        print("ACK:1")
+        activate_pin(pin1)
 
-
+    elif char == "2":
+        print("ACK:2")
+        activate_pin(pin2)
