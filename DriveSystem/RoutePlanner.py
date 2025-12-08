@@ -109,8 +109,9 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.dropSupply(supplies)
         time.sleep(2.0)
 
+        returnhome_duration = duration - 0.1
         # return with same |speed| and same duration
-        self.ReturnHome(speed, duration)
+        self.ReturnHome(speed, returnhome_duration)
 
     # Converts degrees to angular speed (radians/sec)
     def DegreesToAngularSpeed(self, degrees: float) -> float:
@@ -133,7 +134,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         rotation_speed = self.DegreesToAngularSpeed(90)
 
         speed = 0.08  # m/s
-        durations = {0: 1.0, 1: 3.0, 2: 5.0, 3: 7.0}
+        durations = {0: 1.5, 1: 3.0, 2: 4.5, 3: 6.0}
 
         if dest in durations:
             self.get_logger().info(f'Routing to Location {dest}')
