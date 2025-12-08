@@ -2,7 +2,7 @@ import time
 import sys
 from machine import Pin, PWM
 
-def supplyMotor(supplyID: int, duty: int = int(0.2 * 65535), duration: float = 4.0):
+def supplyMotor(supplyID: int, duty: int = int(0.2 * 65535), duration: float = 10.0):
     """
     supplyID: motor number (0–3)
     duty: PWM duty cycle (0–65535 on RP2040)
@@ -18,7 +18,7 @@ def supplyMotor(supplyID: int, duty: int = int(0.2 * 65535), duration: float = 4
 
     # Start PWM
     pwm = PWM(pin_obj)
-    pwm.freq(1000)
+    pwm.freq(5000)
 
     print("Activating supply motor", supplyID)
     pwm.duty_u16(duty)
@@ -44,8 +44,8 @@ def send_ack(supplyID):
 
 def main():
     # Debug LED on pin 22
-    pin18 = Pin(18, Pin.OUT)
-    pin18.value(1)
+    pin19 = Pin(19, Pin.OUT)
+    pin19.value(1)
 
     print("Pico ready. Listening on USB serial...")
 
