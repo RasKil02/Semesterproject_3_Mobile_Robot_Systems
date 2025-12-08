@@ -4,7 +4,9 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
 from DriveSystem.PicoMotorController import PicoMotorController
-picosender = PicoMotorController()
+picosender = PicoMotorController(
+        "/dev/serial/by-id/usb-MicroPython_Board_in_FS_mode_e6613008e37c6f34-if00"
+    )
 #from machine import Pin
 import serial
 import time
