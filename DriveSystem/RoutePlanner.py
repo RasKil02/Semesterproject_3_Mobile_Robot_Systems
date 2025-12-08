@@ -103,7 +103,6 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.rotate(angular_speed, 2.0)
         # drop
         time.sleep(2.0)
-
         # her skal der skrives noget kode i forhold til at styre drop mekanismen
         self.dropSupply(supplies)
         time.sleep(2.0)
@@ -119,6 +118,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
 
     # Returns home by rotating back and driving straight
     def ReturnHome(self, speed: float, duration: float):
+        print("In return home speed:", speed, "duration:", duration)
         self.get_logger().info('Returning Home')
         self.rotate(self.DegreesToAngularSpeed(-90), 2.0)   # rotate back ~90°
         self.driveStraight(-abs(float(speed)), float(duration))  # same duration back
@@ -126,6 +126,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Chooses route based on command and executes it. command is a 12 bit string
     def chooseRoute(self, command: str):
         dest = self.destDecision(command)
+        print("In chooseRoute, destination is:", dest)
         supplies = self.supplyDecision(command)
         rotation_speed = self.DegreesToAngularSpeed(90)
 
