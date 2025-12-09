@@ -418,6 +418,9 @@ class DTMFDetector:
             print("Detected digits so far:", "".join(digits))
 
             if len(digits) == 8:
+                # Save file after loop completes
+                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values)
                 return "".join(digits)
 
 
