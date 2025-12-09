@@ -599,41 +599,43 @@ class DTMFDetector:
 
             return twist_pos, twist_neg
     
-    def adaptive_snr_threshold(self, rms,
-                           snr_min, snr_max,
-                           rms_min, rms_max):
+    def adaptive_snr_threshold(self, rms, snr_min, snr_max, rms_min, rms_max):
+
+        # Low RMS → need lenient threshold → use high (snr_max)
+        if rms <= rms_min:
+            return snr_max
+
+        # High RMS → strict threshold → use low (snr_min)
+        if rms >= rms_max:
+            return snr_min
+
+        # Interpolate in reverse
+        scale = (rms - rms_min) / (rms_max - rms_min)
+        return snr_max - scale * (snr_max - snr_min)
+
+
+
+    def adaptive_sep_threshold(self, rms, sep_min, sep_max, rms_min, rms_max):
 
         if rms <= rms_min:
-            return snr_min        # lenient when quiet
+            return sep_max   # lenient threshold
+
         if rms >= rms_max:
-            return snr_max        # strict when strong
+            return sep_min   # strict threshold
 
         scale = (rms - rms_min) / (rms_max - rms_min)
-        return snr_min + scale * (snr_max - snr_min)
+        return sep_max - scale * (sep_max - sep_min)
 
-    def adaptive_sep_threshold(self, rms,
-                           sep_min, sep_max,
-                           rms_min, rms_max):
+    def adaptive_dom_threshold(self, rms, dom_min, dom_max, rms_min, rms_max):
 
         if rms <= rms_min:
-            return sep_min
+            return dom_max   # lenient for weak tones
+
         if rms >= rms_max:
-            return sep_max
+            return dom_min   # strict for strong tones
 
         scale = (rms - rms_min) / (rms_max - rms_min)
-        return sep_min + scale * (sep_max - sep_min)
-    
-    def adaptive_dom_threshold(self, rms,
-                           dom_min, dom_max,
-                           rms_min, rms_max):
-
-        if rms <= rms_min:
-            return dom_min
-        if rms >= rms_max:
-            return dom_max
-
-        scale = (rms - rms_min) / (rms_max - rms_min)
-        return dom_min + scale * (dom_max - dom_min)
+        return dom_max - scale * (dom_max - dom_min)
 
     # Helper to find top 2 frequencies
     @staticmethod
