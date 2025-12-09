@@ -148,40 +148,76 @@ class DTMFDetector:
                  lowcut: float   = 620.0,
                  highcut: float  = 1700.0,
                  bp_order: int   = 4,
-                 # Tærskler
-                 min_db: float = -20.0,     # minimum absolut db
-                 sep_db: float = 7.0,       # separations-tærskel
-                 dom_db: float = 12.0,       # dominans-tærskel
-                 snr_db: float = 12.0,       # SNR-tærskel
-                 twist_pos_db: float = +5.0,   # positiv twist grænse (row > col)
-                 twist_neg_db: float = -5.0,
-                 twist_pos_max: float = +30,
-                 twist_neg_min: float = -30):  # negativ twist grænse (col > row)
 
+                 # Absolute threshold
+                 min_db: float = -20.0,
+                 twist_pos_db: float = +6.0,
+                 twist_neg_db: float = -6.0,
+
+                 # --- Adaptive separation thresholds ---
+                 sep_min: float = 3.0,
+                 sep_max: float = 7.0,
+
+                 # --- Adaptive dominance thresholds ---
+                 dom_min: float = 6.0,
+                 dom_max: float = 12.0,
+
+                 # --- Adaptive SNR thresholds ---
+                 snr_min: float = 6.0,
+                 snr_max: float = 12.0,
+
+                 # --- Adaptive twist thresholds ---
+                 twist_pos_default: float = +6.0,
+                 twist_neg_default: float = -6.0,
+                 twist_pos_max: float = +30.0,
+                 twist_neg_min: float = -30.0,
+
+                 # RMS range for adaptivity
+                 rms_min: float = 0.01,
+                 rms_max: float = 0.10):
+        
+        # Sampling configuration
         self.fs = int(fs)
-        self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
-        self.hop   = max(1, int(self.fs * (hop_ms/1000.0))) # 60 samples ved 7.5 ms @ 8kHz
+        self.block = max(1, int(self.fs * (block_ms / 1000.0)))
+        self.hop   = max(1, int(self.fs * (hop_ms  / 1000.0)))
 
-        # filter + vindue
-        self.bp = BandPassFilter(self.fs, lowcut, highcut, bp_order) # Uses butterworth bandpass filter
-        self.win = hann(self.block) # Sets up hanning window to be used on each block
+        # Filters and window
+        self.bp  = BandPassFilter(self.fs, lowcut, highcut, bp_order)
+        self.win = hann(self.block)
 
-        # goertzel pr. gruppe
-        self.g_low  = GoertzelAlgorithm(self.fs, self.block, FREQS_LOW) # Will measure the power at the low DTMF frequencies inside each block
-        self.g_high = GoertzelAlgorithm(self.fs, self.block, FREQS_HIGH) # Will measure the power at the high DTMF frequencies inside each block
+        # Goertzel analyzers
+        self.g_low  = GoertzelAlgorithm(self.fs, self.block, FREQS_LOW)
+        self.g_high = GoertzelAlgorithm(self.fs, self.block, FREQS_HIGH)
 
-        # Thresholds
-        self.min_db  = float(min_db)
-        self.sep_db  = float(sep_db)
-        self.dom_db  = float(dom_db)
-        self.snr_db  = float(snr_db)
+        # Absolute threshold
+        self.min_db = float(min_db)
         self.twist_pos_db = float(twist_pos_db)
         self.twist_neg_db = float(twist_neg_db)
-        self.twist_pos_max = float(twist_pos_max)
-        self.twist_neg_min = float(twist_neg_min)
+
+        # Adaptive separation
+        self.sep_min = float(sep_min)
+        self.sep_max = float(sep_max)
+
+        # Adaptive dominance
+        self.dom_min = float(dom_min)
+        self.dom_max = float(dom_max)
+
+        # Adaptive SNR
+        self.snr_min = float(snr_min)
+        self.snr_max = float(snr_max)
+
+        # Adaptive twist parameters
+        self.twist_pos_default = float(twist_pos_default)
+        self.twist_neg_default = float(twist_neg_default)
+        self.twist_pos_max     = float(twist_pos_max)
+        self.twist_neg_min     = float(twist_neg_min)
+
+        # RMS adaptivity range
+        self.rms_min = float(rms_min)
+        self.rms_max = float(rms_max)
 
     def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
-                        sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values):
+                        sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values, sep_thresh_values, dom_thresh_values, snr_thresh_values):
 
         try:
             # Base directory = directory of THIS file
@@ -202,11 +238,11 @@ class DTMFDetector:
 
                 f.write("\n--- Threshold Settings ---\n")
                 f.write(f"min_db threshold: {self.min_db}\n")
-                f.write(f"sep_db threshold: {self.sep_db}\n")
-                f.write(f"dom_db threshold: {self.dom_db}\n")
-                f.write(f"snr_db threshold: {self.snr_db}\n")
                 f.write(f"twist_pos_db: {self.twist_pos_db}\n")
                 f.write(f"twist_neg_db: {self.twist_neg_db}\n")
+                f.write(f"sep_thresh_values: {sep_thresh_values}\n")  
+                f.write(f"dom_thresh_values: {dom_thresh_values}\n")
+                f.write(f"snr_thresh_values: {snr_thresh_values}\n")
 
                 f.write("\n--- Collected Metrics ---\n")
 
@@ -242,18 +278,28 @@ class DTMFDetector:
                 for v in twist_neg_values:
                     f.write(f"{v}\n")
 
+                f.write("\nsep_thresh_values:\n")
+                for v in sep_thresh_values:
+                    f.write(f"{v}\n")  
+                
+                f.write("\ndom_thresh_values:\n")
+                for v in dom_thresh_values:
+                    f.write(f"{v}\n")
+                
+                f.write("\nsnr_thresh_values:\n") 
+                for v in snr_thresh_values:
+                    f.write(f"{v}\n")
+
             print(f"Saved debug file: {filename}")
 
         except Exception as e:
             print("Error saving debug file:", e)
 
-
-    # Analyze audio data for DTMF digits
     def analyze_block(self, seg: np.ndarray, stabilizer, now_ms: float):
-          
+
         if len(seg) != self.block:
             return None
-        
+
         seg = seg.astype(float)
         seg -= seg.mean()
 
@@ -275,56 +321,91 @@ class DTMFDetector:
         low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
         high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
 
-        snr_low_db  = db10(E_low[lf]  / low_noise)
-        snr_high_db = db10(E_high[hf] / high_noise)
-
-        sep_ok = (l_abs_db - l2_db > self.sep_db) and (h_abs_db - h2_db > self.sep_db)
-        abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db)
-
-        twist = (l_abs_db - h_abs_db)
+        snr_low_raw  = db10(E_low[lf]  / low_noise)
+        snr_high_raw = db10(E_high[hf] / high_noise)
 
         rms = np.sqrt(np.mean(seg_f**2)) + EPS
 
-        twist_pos_threshold, twist_neg_threshold = self.adaptive_twist_threshold(rms, 
-                                                                                rms_min=0.01, 
-                                                                                rms_max=0.1,
-                                                                                twist_pos_max=self.twist_pos_max,
-                                                                                twist_neg_min=self.twist_neg_min,
-                                                                                twist_pos_default=self.twist_pos_db,
-                                                                                twist_neg_default=self.twist_neg_db)
+        # RMS normalization scale factor (c = tuning parameter)
+        c = 0.15   # tune this (0.1–0.3 good range)
+        scale = 1.0 + c / (rms + EPS)
+        
+        # RAW unscaled metrics ->
+        sep_low_raw  = l_abs_db - l2_db
+        sep_high_raw = h_abs_db - h2_db
+        dom_low_raw  = db10(E_low[lf]  / low_noise)
+        dom_high_raw = db10(E_high[hf] / high_noise)
+        twist_raw    = l_abs_db - h_abs_db
 
-        twist_ok = (twist_neg_threshold <= twist <= twist_pos_threshold)
+        # Apply RMS normalization ->
+        sep_low  = sep_low_raw  * scale
+        sep_high = sep_high_raw * scale
 
-        l_dom_db = db10(E_low[lf]  / low_noise)
-        h_dom_db = db10(E_high[hf] / high_noise)
-        dom_ok   = (l_dom_db >= self.dom_db) and (h_dom_db >= self.dom_db)
+        dom_low  = dom_low_raw  * scale
+        dom_high = dom_high_raw * scale
 
-        snr_ok   = (snr_low_db >= self.snr_db) and (snr_high_db >= self.snr_db)
+        snr_low  = snr_low_raw  * scale
+        snr_high = snr_high_raw * scale
 
+        twist = twist_raw * scale
+
+        # Adaptive thresholds and decisions ->
+        sep_thresh = self.adaptive_sep_threshold(
+            rms, self.sep_min, self.sep_max, rms_min=0.01, rms_max=0.1
+        )
+        sep_ok = (sep_low > sep_thresh) and (sep_high > sep_thresh)
+
+        abs_ok = (l_abs_db - blk_db > self.min_db) and (h_abs_db - blk_db > self.min_db)
+
+        twist_pos_th, twist_neg_th = self.adaptive_twist_threshold(
+            rms,
+            twist_pos_max=self.twist_pos_max,
+            twist_neg_min=self.twist_neg_min,
+            twist_pos_default=self.twist_pos_db,
+            twist_neg_default=self.twist_neg_db,
+            rms_min=0.01,
+            rms_max=0.1
+        )
+        twist_ok = (twist_neg_th <= twist <= twist_pos_th)
+
+        dom_thresh = self.adaptive_dom_threshold(
+            rms, self.dom_min, self.dom_max, rms_min=0.01, rms_max=0.1
+        )
+        dom_ok = (dom_low >= dom_thresh) and (dom_high >= dom_thresh)
+
+        snr_thresh = self.adaptive_snr_threshold(
+            rms, self.snr_min, self.snr_max, rms_min=0.01, rms_max=0.1
+        )
+        snr_ok = (snr_low >= snr_thresh) and (snr_high >= snr_thresh)
+
+        # Final decision ->
         good = abs_ok and sep_ok and twist_ok and dom_ok and snr_ok
-
         sym = LUT.get((lf, hf), "?") if good else "?"
 
-        # IMPORTANT: use stabilizer exactly like your old analyze()
-        out = stabilizer.update(sym, now_ms=now_ms)
+        out = stabilizer.update(sym, now_ms)
 
         return sym, out, {
-            "snr_low": snr_low_db,
-            "snr_high": snr_high_db,
+            "snr_low": snr_low,
+            "snr_high": snr_high,
             "min_db_low": l_abs_db - blk_db,
             "min_db_high": h_abs_db - blk_db,
-            "sep_low": l_abs_db - l2_db,
-            "sep_high": h_abs_db - h2_db,
-            "dom_low": l_dom_db,
-            "dom_high": h_dom_db,
+            "sep_low": sep_low,
+            "sep_high": sep_high,
+            "dom_low": dom_low,
+            "dom_high": dom_high,
             "twist": twist,
-            "twist_pos_threshold": twist_pos_threshold,
-            "twist_neg_threshold": twist_neg_threshold}
-    
+            "twist_pos_threshold": twist_pos_th,
+            "twist_neg_threshold": twist_neg_th,
+            "sep_thresh": sep_thresh,
+            "dom_thresh": dom_thresh,
+            "snr_thresh": snr_thresh
+        }
+
     def collect_plot_metrics(self, t_ms, block, sym, metrics,
                          amplitudes, block_symbols, SNR_values,
                          min_db_values, sep_db_values,
-                         dom_db_values, twist_values, twist_neg_values, twist_pos_values):
+                         dom_db_values, twist_values, twist_neg_values, 
+                         twist_pos_values, sep_thresh_values, dom_thresh_values, snr_thresh_values):
 
         if t_ms < 2000.0:
             return
@@ -344,6 +425,9 @@ class DTMFDetector:
         twist_values.append(metrics['twist'])
         twist_neg_values.append(metrics['twist_neg_threshold'])
         twist_pos_values.append(metrics['twist_pos_threshold'])
+        sep_thresh_values.append(metrics['sep_thresh'])
+        dom_thresh_values.append(metrics['dom_thresh'])     
+        snr_thresh_values.append(metrics['snr_thresh'])
 
     def stream_and_detect(self, stabilizer, sampler, plot=False):
 
@@ -364,6 +448,9 @@ class DTMFDetector:
         twist_values = []
         twist_neg_values = []
         twist_pos_values = []
+        sep_thresh_values = []
+        dom_thresh_values = []
+        snr_thresh_values = []
 
         for block in sampler.stream_blocks(self.block):
 
@@ -375,8 +462,8 @@ class DTMFDetector:
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
                 min_db_values, sep_db_values, dom_db_values,
-                twist_values, twist_neg_values, twist_pos_values
-            )
+                twist_values, twist_neg_values, twist_pos_values, 
+                sep_thresh_values, dom_thresh_values, snr_thresh_values)
 
             if collecting_payload:
                 timer += block_ms
@@ -387,6 +474,20 @@ class DTMFDetector:
                     collecting_payload = False
                     start_stage = 0
                     timer = 0.0
+                    self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
+                                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
+                    amplitudes.clear()
+                    block_symbols.clear()
+                    SNR_values.clear()
+                    sep_db_values.clear()
+                    dom_db_values.clear()
+                    twist_values.clear()
+                    twist_neg_values.clear()
+                    twist_pos_values.clear()
+                    sep_thresh_values.clear()
+                    dom_thresh_values.clear()
+                    snr_thresh_values.clear()
                     continue
 
             if not out:
@@ -420,11 +521,10 @@ class DTMFDetector:
             if len(digits) == 8:
                 # Save file after loop completes
                 self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values)
+                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
+                                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
                 return "".join(digits)
 
-
-            
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
         digit = ""
         collecting_payload = False
@@ -456,7 +556,8 @@ class DTMFDetector:
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, dom_db_values, twist_values, twist_neg_values, twist_pos_values
+                min_db_values, sep_db_values, dom_db_values, 
+                twist_values, twist_neg_values, twist_pos_values
             )
 
             t_ms += block_ms
@@ -480,9 +581,10 @@ class DTMFDetector:
         #                       dom_db_values, twist_values, twist_neg_values, twist_pos_values)
         return digit
 
-    def adaptive_twist_threshold(self, rms, rms_min=0.02, rms_max=0.1, 
-                             twist_pos_max=30.0, twist_neg_min=-30.0,
-                             twist_pos_default=6.0, twist_neg_default=-6.0): # Values twist_pos_max and twist_neg_min are overwritten in init
+    def adaptive_twist_threshold(self, rms, 
+                             twist_pos_max, twist_neg_min,
+                             twist_pos_default, twist_neg_default, 
+                             rms_min=0.02, rms_max=0.1): # Values twist_pos_max and twist_neg_min are overwritten in init
 
         if rms <= rms_min:
             # Very low RMS → no tone → be strict
@@ -500,9 +602,42 @@ class DTMFDetector:
             twist_neg = twist_neg_default + scale * (twist_neg_min - twist_neg_default)
 
             return twist_pos, twist_neg
+    
+    def adaptive_snr_threshold(self, rms,
+                           snr_min, snr_max,
+                           rms_min=0.01, rms_max=0.1):
 
+        if rms <= rms_min:
+            return snr_min        # lenient when quiet
+        if rms >= rms_max:
+            return snr_max        # strict when strong
 
+        scale = (rms - rms_min) / (rms_max - rms_min)
+        return snr_min + scale * (snr_max - snr_min)
 
+    def adaptive_sep_threshold(self, rms,
+                           sep_min, sep_max,
+                           rms_min=0.01, rms_max=0.1):
+
+        if rms <= rms_min:
+            return sep_min
+        if rms >= rms_max:
+            return sep_max
+
+        scale = (rms - rms_min) / (rms_max - rms_min)
+        return sep_min + scale * (sep_max - sep_min)
+    
+    def adaptive_dom_threshold(self, rms,
+                           dom_min, dom_max,
+                           rms_min=0.01, rms_max=0.1):
+
+        if rms <= rms_min:
+            return dom_min
+        if rms >= rms_max:
+            return dom_max
+
+        scale = (rms - rms_min) / (rms_max - rms_min)
+        return dom_min + scale * (dom_max - dom_min)
 
     # Helper to find top 2 frequencies
     @staticmethod
