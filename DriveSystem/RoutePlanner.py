@@ -126,7 +126,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.dropSupply(supplies)
         time.sleep(2.0)
 
-        returnhome_duration = duration - 0.1
+        returnhome_duration = duration - 0.05
         # return with same |speed| and same duration
         self.ReturnHome(speed, returnhome_duration)
 
@@ -151,7 +151,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         rotation_speed = self.DegreesToAngularSpeed(90)
 
         speed = 0.08  # m/s
-        durations = {0: 1.5, 1: 3.0, 2: 4.5, 3: 6.0}
+        durations = {0: 1.75, 1: 3.0, 2: 4.5, 3: 5.75}
 
         if dest in durations:
             self.get_logger().info(f'Routing to Location {dest}')
