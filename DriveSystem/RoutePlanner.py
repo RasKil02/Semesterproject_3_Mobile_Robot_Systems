@@ -60,8 +60,8 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             if sleep_s > 0:
                 time.sleep(sleep_s)
 
-    # Stop robot
-    self.pub.publish(self._make_msg(0.0, 0.0))
+        # Stop robot
+        self.pub.publish(self._make_msg(0.0, 0.0))
 
 
     # Stops the robot with an optional pause
