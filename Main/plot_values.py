@@ -16,6 +16,7 @@ plotter = Plotting()
 # ============================================================
 #   READ TXT FILE (UPDATED FOR ADAPTIVE THRESHOLDS)
 # ============================================================
+
 def read_plotting_txt(filename):
     amplitudes = []
     block_symbols = []
@@ -23,6 +24,7 @@ def read_plotting_txt(filename):
     sep_db_values = []
     dom_db_values = []
     twist_values = []
+
     twist_pos_thresholds = []
     twist_neg_thresholds = []
 
@@ -38,68 +40,78 @@ def read_plotting_txt(filename):
             if not line:
                 continue
 
-            # --- Identify adaptive threshold sections ---
-            if "sep_thresh_values" in line:
-                section = "sep_thresh"
-                continue
-            if "dom_thresh_values" in line:
-                section = "dom_thresh"
-                continue
-            if "snr_thresh_values" in line:
-                section = "snr_thresh"
+            # ----------------------------------------------------
+            # STOP parsing a section when a new header appears
+            # ----------------------------------------------------
+            if line.startswith("---"):      # e.g. "--- Collected Metrics ---"
+                section = None
                 continue
 
-            # Twist adaptive thresholds
-            if "twist_pos_thresholds" in line:
-                section = "twist_pos"
-                continue
-            if "twist_neg_thresholds" in line:
-                section = "twist_neg"
-                continue
-
-            # --- Identify metric sections ---
+            # ----------------------------------------------------
+            # Section headers
+            # ----------------------------------------------------
             if "Amplitude samples" in line:
-                section = "amp"
-                continue
+                section = "amp"; continue
             if "Detected symbols per block" in line:
-                section = "sym"
-                continue
-            if "SNR values" in line:
-                section = "snr"
-                continue
+                section = "sym"; continue
+            if "SNR values" in line and "threshold" not in line:
+                section = "snr"; continue
             if "sep_db values" in line:
-                section = "sep"
-                continue
+                section = "sep"; continue
             if "dom_db values" in line:
-                section = "dom"
-                continue
+                section = "dom"; continue
             if "twist values" in line:
-                section = "twist"
+                section = "twist"; continue
+
+            # Adaptive thresholds
+            if "twist_pos_thresholds" in line:
+                section = "twist_pos"; continue
+            if "twist_neg_thresholds" in line:
+                section = "twist_neg"; continue
+            if "sep_thresh_values" in line:
+                section = "sep_thresh"; continue
+            if "dom_thresh_values" in line:
+                section = "dom_thresh"; continue
+            if "snr_thresh_values" in line:
+                section = "snr_thresh"; continue
+
+            # ----------------------------------------------------
+            # STOP numeric parsing when encountering name:value
+            # example: "min_db threshold: -20"
+            # ----------------------------------------------------
+            if ":" in line and not line.replace('.', '', 1).isdigit():
+                section = None
                 continue
 
-            # --- Parse section lines ---
-            if section == "amp":
-                amplitudes.append(float(line))
-            elif section == "sym":
-                block_symbols.append(line)
-            elif section == "snr":
-                SNR_values.append(float(line))
-            elif section == "sep":
-                sep_db_values.append(float(line))
-            elif section == "dom":
-                dom_db_values.append(float(line))
-            elif section == "twist":
-                twist_values.append(float(line))
-            elif section == "twist_pos":
-                twist_pos_thresholds.append(float(line))
-            elif section == "twist_neg":
-                twist_neg_thresholds.append(float(line))
-            elif section == "sep_thresh":
-                sep_thresh_values.append(float(line))
-            elif section == "dom_thresh":
-                dom_thresh_values.append(float(line))
-            elif section == "snr_thresh":
-                snr_thresh_values.append(float(line))
+            # ----------------------------------------------------
+            # Parse numbers depending on section
+            # ----------------------------------------------------
+            try:
+                if section == "amp":
+                    amplitudes.append(float(line))
+                elif section == "sym":
+                    block_symbols.append(line)
+                elif section == "snr":
+                    SNR_values.append(float(line))
+                elif section == "sep":
+                    sep_db_values.append(float(line))
+                elif section == "dom":
+                    dom_db_values.append(float(line))
+                elif section == "twist":
+                    twist_values.append(float(line))
+                elif section == "twist_pos":
+                    twist_pos_thresholds.append(float(line))
+                elif section == "twist_neg":
+                    twist_neg_thresholds.append(float(line))
+                elif section == "sep_thresh":
+                    sep_thresh_values.append(float(line))
+                elif section == "dom_thresh":
+                    dom_thresh_values.append(float(line))
+                elif section == "snr_thresh":
+                    snr_thresh_values.append(float(line))
+            except ValueError:
+                # Safety net — ignore non-numeric garbage
+                continue
 
     return (
         amplitudes, block_symbols, SNR_values,

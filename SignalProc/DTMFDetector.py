@@ -325,10 +325,6 @@ class DTMFDetector:
         snr_high_raw = db10(E_high[hf] / high_noise)
 
         rms = np.sqrt(np.mean(seg_f**2)) + EPS
-
-        # RMS normalization scale factor (c = tuning parameter)
-        c = 0.15   # tune this (0.1–0.3 good range)
-        scale = 1.0 + c / (rms + EPS)
         
         # RAW unscaled metrics ->
         sep_low_raw  = l_abs_db - l2_db
@@ -338,16 +334,16 @@ class DTMFDetector:
         twist_raw    = l_abs_db - h_abs_db
 
         # Apply RMS normalization ->
-        sep_low  = sep_low_raw  * scale
-        sep_high = sep_high_raw * scale
+        sep_low  = sep_low_raw
+        sep_high = sep_high_raw
 
-        dom_low  = dom_low_raw  * scale
-        dom_high = dom_high_raw * scale
+        dom_low  = dom_low_raw
+        dom_high = dom_high_raw
 
-        snr_low  = snr_low_raw  * scale
-        snr_high = snr_high_raw * scale
+        snr_low  = snr_low_raw
+        snr_high = snr_high_raw
 
-        twist = twist_raw * scale
+        twist = twist_raw
 
         # Adaptive thresholds and decisions ->
         sep_thresh = self.adaptive_sep_threshold(
