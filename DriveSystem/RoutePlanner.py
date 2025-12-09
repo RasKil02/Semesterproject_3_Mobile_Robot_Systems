@@ -11,7 +11,7 @@ picosender = PicoMotorController(
 import serial
 import time
 
-
+#done
 class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan bruge rclpy funktioner
     def __init__(self):
         super().__init__('route_planner') # initialize the Node class with the name 'route_planner'
