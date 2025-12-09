@@ -470,20 +470,20 @@ class DTMFDetector:
                     collecting_payload = False
                     start_stage = 0
                     timer = 0.0
-                    self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
-                                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
-                    amplitudes.clear()
-                    block_symbols.clear()
-                    SNR_values.clear()
-                    sep_db_values.clear()
-                    dom_db_values.clear()
-                    twist_values.clear()
-                    twist_neg_values.clear()
-                    twist_pos_values.clear()
-                    sep_thresh_values.clear()
-                    dom_thresh_values.clear()
-                    snr_thresh_values.clear()
+                    #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                    #                   dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
+                    #                   sep_thresh_values, dom_thresh_values, snr_thresh_values)
+                    #amplitudes.clear()
+                    #block_symbols.clear()
+                    #SNR_values.clear()
+                    #sep_db_values.clear()
+                    #dom_db_values.clear()
+                    #twist_values.clear()
+                    #twist_neg_values.clear()
+                    #twist_pos_values.clear()
+                    #sep_thresh_values.clear()
+                    #dom_thresh_values.clear()
+                    #snr_thresh_values.clear()
                     continue
 
             if not out:
@@ -516,9 +516,9 @@ class DTMFDetector:
 
             if len(digits) == 8:
                 # Save file after loop completes
-                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
-                                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
+                #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                #                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
+                #                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
                 return "".join(digits)
 
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
