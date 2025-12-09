@@ -155,8 +155,8 @@ class DTMFDetector:
                  snr_db: float = 12.0,       # SNR-tærskel
                  twist_pos_db: float = +5.0,   # positiv twist grænse (row > col)
                  twist_neg_db: float = -5.0,
-                 twist_pos_max: float = +25,
-                 twist_neg_min: float = -25):  # negativ twist grænse (col > row)
+                 twist_pos_max: float = +30,
+                 twist_neg_min: float = -30):  # negativ twist grænse (col > row)
 
         self.fs = int(fs)
         self.block = max(1, int(self.fs * (block_ms/1000.0))) # 240 samples ved 30 ms @ 8kHz
@@ -477,9 +477,9 @@ class DTMFDetector:
         #                       dom_db_values, twist_values, twist_neg_values, twist_pos_values)
         return digit
 
-    def adaptive_twist_threshold(self, rms, rms_min=0.01, rms_max=0.1, 
+    def adaptive_twist_threshold(self, rms, rms_min=0.02, rms_max=0.1, 
                              twist_pos_max=30.0, twist_neg_min=-30.0,
-                             twist_pos_default=5.0, twist_neg_default=-5.0): # Values twist_pos_max and twist_neg_min are overwritten in init
+                             twist_pos_default=6.0, twist_neg_default=-6.0): # Values twist_pos_max and twist_neg_min are overwritten in init
 
         if rms <= rms_min:
             # Very low RMS → no tone → be strict
@@ -491,7 +491,7 @@ class DTMFDetector:
 
         else:
             # Interpolate from strict → lenient as RMS increases
-            scale = (rms - rms_min) / (rms_max - rms_min)
+            scale = np.sqrt((rms - rms_min) / (rms_max - rms_min))
 
             twist_pos = twist_pos_default + scale * (twist_pos_max - twist_pos_default)
             twist_neg = twist_neg_default + scale * (twist_neg_min - twist_neg_default)
