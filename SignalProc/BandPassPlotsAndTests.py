@@ -183,78 +183,91 @@ plt.show()
 
 
 import matplotlib.pyplot as plt
-from Goertzel import GoertzelAlgorithm
-
-def plot_goertzel_power(powers, title="Goertzel Power per Frequency"):
-    """
-    Plots the Goertzel power result as a simple bar plot.
-    'powers' must be a {frequency: power} dictionary.
-    """
-
-    freqs = list(powers.keys())
-    values = list(powers.values())
-
-    plt.figure(figsize=(8, 3))  # same style size as typical time/fft plots
-    plt.bar(freqs, values, width=40, edgecolor="black")
-
-    plt.title(title)
-    plt.xlabel("Frequency [Hz]")
-    plt.ylabel("Power")
-
-    plt.grid(axis="y", linestyle="--", alpha=0.5)
-    plt.tight_layout()
-    plt.show()
-
-
-# -------------------------------------------
-# 1) CREATE YOUR DTMF SIGNAL HERE
-# -------------------------------------------
 import numpy as np
+from scipy.signal import butter, sosfilt
+from Goertzel import GoertzelAlgorithm
+from BandpassFilter import BandPassFilter   # If you want to test your own filter instead
 
+
+# -------------------------------------------
+# 1) CREATE YOUR DTMF SIGNAL
+# -------------------------------------------
 fs = 44100
 duration = 0.01
 t = np.linspace(0, duration, int(fs*duration), endpoint=False)
 
-# Example for DTMF digit "1"
 f_low = 697
 f_high = 1209
 dtmf_signal = np.sin(2*np.pi*f_low*t) + np.sin(2*np.pi*f_high*t)
 
 
 # -------------------------------------------
-# 2) NOW PUT THE GOERTZEL BLOCK RIGHT HERE
+# 2) CREATE 4TH ORDER BUTTERWORTH BANDPASS FILTER
 # -------------------------------------------
-# RUN GOERTZEL ON DTMF SIGNAL
+lowcut = 620
+highcut = 1700
+
+sos = butter(4, [lowcut/(fs/2), highcut/(fs/2)], btype='bandpass', output='sos')
+
+
+# -------------------------------------------
+# 3) FILTER THE SIGNAL
+# -------------------------------------------
+filtered_signal = sosfilt(sos, dtmf_signal)
+
+
+# -------------------------------------------
+# 4) RUN GOERTZEL ON FILTERED SIGNAL
+# -------------------------------------------
 target_freqs = [697, 770, 852, 941, 1209, 1336, 1477, 1633]
+N = 205
 
-N = 205  # Goertzel block size
-block = dtmf_signal[:N]   # Take first N samples
-
+block = filtered_signal[:N]
 g = GoertzelAlgorithm(fs=fs, block=N, target_freqs=target_freqs)
 powers = g.process(block)
 
-# Plot the Goertzel result
-plot_goertzel_power(powers)
 
+# -------------------------------------------
+# 5) PLOT FULL PIPELINE
+# -------------------------------------------
+def plot_full_pipeline(original_signal, filtered_signal, fs, powers,
+                       title1="Original DTMF Signal",
+                       title2="After 4th Order Butterworth Filter",
+                       title3="Goertzel Power Spectrum"):
 
-import matplotlib.pyplot as plt
-import numpy as np
+    t = np.arange(len(original_signal)) / fs
+    freqs = list(powers.keys())
+    values = list(powers.values())
 
-def plot_before_goertzel(signal, fs, title="Signal Before Goertzel (Time Domain)"):
-    """
-    Plots the time-domain signal BEFORE applying the Goertzel algorithm.
-    
-    signal: 1D numpy array
-    fs: sampling frequency in Hz
-    """
-    N = len(signal)
-    t = np.arange(N) / fs   # time axis in seconds
+    plt.figure(figsize=(10, 8))
 
-    plt.figure(figsize=(8, 3))
-    plt.plot(t, signal, color="tab:blue")
-    plt.title(title)
+    # Original signal
+    plt.subplot(3, 1, 1)
+    plt.plot(t, original_signal, color="blue")
+    plt.title(title1)
     plt.xlabel("Time [s]")
     plt.ylabel("Amplitude")
-    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.grid(True)
+
+    # Filtered signal
+    plt.subplot(3, 1, 2)
+    plt.plot(t, filtered_signal, color="green")
+    plt.title(title2)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+
+    # Goertzel power spectrum
+    plt.subplot(3, 1, 3)
+    plt.bar(freqs, values, width=40, color="orange", edgecolor="black")
+    plt.title(title3)
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Power")
+    plt.grid(axis="y")
+
     plt.tight_layout()
     plt.show()
+
+
+plot_full_pipeline(dtmf_signal, filtered_signal, fs, powers)
+
