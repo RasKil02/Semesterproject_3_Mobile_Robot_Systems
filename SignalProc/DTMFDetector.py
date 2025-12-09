@@ -156,15 +156,15 @@ class DTMFDetector:
 
                  # --- Adaptive separation thresholds ---
                  sep_min: float = 6,
-                 sep_max: float = 14,
+                 sep_max: float = 20,
 
                  # --- Adaptive dominance thresholds ---
                  dom_min: float = 7,
-                 dom_max: float = 16,
+                 dom_max: float = 20,
 
                  # --- Adaptive SNR thresholds ---
                  snr_min: float = 8.0,
-                 snr_max: float = 20,
+                 snr_max: float = 30,
 
                  # --- Adaptive twist thresholds ---
                  twist_pos_default: float = +6.0,
