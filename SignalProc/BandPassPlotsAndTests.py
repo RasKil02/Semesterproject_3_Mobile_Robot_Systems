@@ -201,6 +201,11 @@ f_high = 1209
 dtmf_signal = np.sin(2*np.pi*f_low*t) + np.sin(2*np.pi*f_high*t)
 
 
+# Add noise
+noise_level = 0.3
+noisy_sig = sig + noise_level * np.random.randn(len(sig))
+
+
 # -------------------------------------------
 # 2) CREATE 4TH ORDER BUTTERWORTH BANDPASS FILTER
 # -------------------------------------------
