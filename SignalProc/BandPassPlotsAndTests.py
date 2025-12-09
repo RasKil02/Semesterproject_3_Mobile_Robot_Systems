@@ -179,3 +179,27 @@ plt.grid(True)
 
 plt.tight_layout()
 plt.show()
+
+
+
+import matplotlib.pyplot as plt
+
+def plot_goertzel_power(powers, title="Goertzel Power per Frequency"):
+    """
+    Plots the Goertzel power result as a simple bar plot.
+    'powers' must be a {frequency: power} dictionary.
+    """
+
+    freqs = list(powers.keys())
+    values = list(powers.values())
+
+    plt.figure(figsize=(8, 3))  # same style size as typical time/fft plots
+    plt.bar(freqs, values, width=40, edgecolor="black")
+
+    plt.title(title)
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Power")
+
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
