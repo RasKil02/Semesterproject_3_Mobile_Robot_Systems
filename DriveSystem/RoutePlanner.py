@@ -33,7 +33,6 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         msg.twist.linear.x = float(v)
         msg.twist.angular.z = float(w)
         return msg
-
     def publish_vw_for_duration(self, v: float, w: float, duration: float):
         print("In publish_vw_for_duration with v:", v, "w:", w, "duration:", duration)
 
@@ -42,18 +41,14 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             print("Waiting for robot to subscribe to cmd_vel...")
             rclpy.spin_once(self, timeout_sec=0.1)
 
-        time.sleep(1)  # small delay to ensure connection
+        time.sleep(1)
 
         duration = max(0.0, float(duration))
         end_t = time.monotonic() + duration
         next_tick = time.monotonic()
-<<<<<<< HEAD
 
         while rclpy.ok() and time.monotonic() < end_t:
             print("Publishing command at time:", time.monotonic())
-=======
-        while rclpy.ok() and time.monotonic() < end_t:  # publish TwistStamped messages at fixed rate
->>>>>>> e741471 (Small)
             self.pub.publish(self._make_msg(v, w))
             rclpy.spin_once(self, timeout_sec=0.0)
             next_tick += self.dt
@@ -63,7 +58,6 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
 
         # Stop robot
         self.pub.publish(self._make_msg(0.0, 0.0))
-
 
     # Stops the robot with an optional pause
     def stop(self, pause: float = 0.2):
