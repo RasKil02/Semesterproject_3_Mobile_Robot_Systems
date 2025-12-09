@@ -183,7 +183,7 @@ plt.show()
 
 
 import matplotlib.pyplot as plt
-from SignalProc.Goertzel import GoertzelAlgorithm
+from Goertzel import GoertzelAlgorithm
 
 def plot_goertzel_power(powers, title="Goertzel Power per Frequency"):
     """
@@ -230,7 +230,7 @@ target_freqs = [697, 770, 852, 941, 1209, 1336, 1477, 1633]
 N = 205  # Goertzel block size
 block = dtmf_signal[:N]   # Take first N samples
 
-g = GoertzelAlgorithm.GoertzelAlgorithm(fs=fs, block=N, target_freqs=target_freqs)
+g = GoertzelAlgorithm(fs=fs, block=N, target_freqs=target_freqs)
 powers = g.process(block)
 
 # Plot the Goertzel result
