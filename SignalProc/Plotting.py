@@ -41,14 +41,20 @@ class Plotting:
     def barplot_of_threshold(self, values, threshold):
         x_values = np.arange(len(values))
         y_values = values
-        
-        thresholdline = [threshold] * len(values)
-        
+
+        # If threshold is a list, use it directly (adaptive thresholds)
+        if isinstance(threshold, (list, np.ndarray)):
+            thresholdline = np.array(threshold)
+        else:
+            # Single-value threshold
+            thresholdline = np.full(len(values), threshold)
+
         return {
             "x": x_values,
             "y": y_values,
             "thresholdline": thresholdline
         }
+
         
     def barplot_of_twist(self, twist_values, twist_neg_values, twist_pos_values):
         x = np.arange(len(twist_values))
