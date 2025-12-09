@@ -24,13 +24,8 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         self.pub = self.create_publisher(TwistStamped, 'cmd_vel', 10) # creates a topic named cmd_vel of type TwistStamped(sends velocity commands to the robot)
         self.get_logger().info(f"RoutePlanner initialized with fixed rate: {self.rate_hz} Hz")
 
-         # ÅBN UART ÉN GANG
-        #self.ser = serial.Serial(
-         #   port="/dev/serial0",
-          #  baudrate=9600,
-           # timeout=1)
-
-    # Makes a TwistStamped message with given linear and angular velocities
+    # Makes a TwistStamped message with given linear and angular velocities7
+    # Twiststamp is a ROS2 message type that includes both velocity and a timestamp
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
