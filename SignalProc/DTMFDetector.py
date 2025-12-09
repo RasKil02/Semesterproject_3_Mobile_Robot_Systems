@@ -155,16 +155,16 @@ class DTMFDetector:
                  twist_neg_db: float = -6.0,
 
                  # --- Adaptive separation thresholds ---
-                 sep_min: float = 3.0,
-                 sep_max: float = 7.0,
+                 sep_min: float = 2.0,
+                 sep_max: float = 10,
 
                  # --- Adaptive dominance thresholds ---
-                 dom_min: float = 6.0,
+                 dom_min: float = 4.0,
                  dom_max: float = 12.0,
 
                  # --- Adaptive SNR thresholds ---
                  snr_min: float = 6.0,
-                 snr_max: float = 12.0,
+                 snr_max: float = 18.0,
 
                  # --- Adaptive twist thresholds ---
                  twist_pos_default: float = +6.0,
@@ -173,8 +173,8 @@ class DTMFDetector:
                  twist_neg_min: float = -30.0,
 
                  # RMS range for adaptivity
-                 rms_min: float = 0.01,
-                 rms_max: float = 0.10):
+                 rms_min: float = 0.2,
+                 rms_max: float = 0.1):
         
         # Sampling configuration
         self.fs = int(fs)
@@ -580,7 +580,7 @@ class DTMFDetector:
     def adaptive_twist_threshold(self, rms, 
                              twist_pos_max, twist_neg_min,
                              twist_pos_default, twist_neg_default, 
-                             rms_min=0.02, rms_max=0.1): # Values twist_pos_max and twist_neg_min are overwritten in init
+                             rms_min, rms_max): # Values twist_pos_max and twist_neg_min are overwritten in init
 
         if rms <= rms_min:
             # Very low RMS → no tone → be strict
@@ -601,7 +601,7 @@ class DTMFDetector:
     
     def adaptive_snr_threshold(self, rms,
                            snr_min, snr_max,
-                           rms_min=0.01, rms_max=0.1):
+                           rms_min, rms_max):
 
         if rms <= rms_min:
             return snr_min        # lenient when quiet
@@ -613,7 +613,7 @@ class DTMFDetector:
 
     def adaptive_sep_threshold(self, rms,
                            sep_min, sep_max,
-                           rms_min=0.01, rms_max=0.1):
+                           rms_min, rms_max):
 
         if rms <= rms_min:
             return sep_min
@@ -625,7 +625,7 @@ class DTMFDetector:
     
     def adaptive_dom_threshold(self, rms,
                            dom_min, dom_max,
-                           rms_min=0.01, rms_max=0.1):
+                           rms_min, rms_max):
 
         if rms <= rms_min:
             return dom_min
