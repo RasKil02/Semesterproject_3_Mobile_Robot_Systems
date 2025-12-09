@@ -28,7 +28,7 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
     # Twiststamp is a ROS2 message type that includes both velocity and a timestamp
     def _make_msg(self, v: float = 0.0, w: float = 0.0) -> TwistStamped:
         msg = TwistStamped()
-        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.stamp = self.get_clock().now().to_msg() # Timestamp of the message
         msg.header.frame_id = 'base_link'
         msg.twist.linear.x = float(v)
         msg.twist.angular.z = float(w)
@@ -47,9 +47,13 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
         duration = max(0.0, float(duration))
         end_t = time.monotonic() + duration
         next_tick = time.monotonic()
+<<<<<<< HEAD
 
         while rclpy.ok() and time.monotonic() < end_t:
             print("Publishing command at time:", time.monotonic())
+=======
+        while rclpy.ok() and time.monotonic() < end_t:  # publish TwistStamped messages at fixed rate
+>>>>>>> e741471 (Small)
             self.pub.publish(self._make_msg(v, w))
             rclpy.spin_once(self, timeout_sec=0.0)
             next_tick += self.dt
