@@ -128,7 +128,6 @@ plt.ylabel("Phase (degrees)")
 plt.tight_layout()
 plt.show()
 
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -179,10 +178,12 @@ plt.grid(True)
 
 plt.tight_layout()
 plt.show()
+"""
 
 
 
 import matplotlib.pyplot as plt
+from SignalProc.Goertzel import GoertzelAlgorithm
 
 def plot_goertzel_power(powers, title="Goertzel Power per Frequency"):
     """
@@ -203,3 +204,34 @@ def plot_goertzel_power(powers, title="Goertzel Power per Frequency"):
     plt.grid(axis="y", linestyle="--", alpha=0.5)
     plt.tight_layout()
     plt.show()
+
+
+# -------------------------------------------
+# 1) CREATE YOUR DTMF SIGNAL HERE
+# -------------------------------------------
+import numpy as np
+
+fs = 44100
+duration = 0.01
+t = np.linspace(0, duration, int(fs*duration), endpoint=False)
+
+# Example for DTMF digit "1"
+f_low = 697
+f_high = 1209
+dtmf_signal = np.sin(2*np.pi*f_low*t) + np.sin(2*np.pi*f_high*t)
+
+
+# -------------------------------------------
+# 2) NOW PUT THE GOERTZEL BLOCK RIGHT HERE
+# -------------------------------------------
+# RUN GOERTZEL ON DTMF SIGNAL
+target_freqs = [697, 770, 852, 941, 1209, 1336, 1477, 1633]
+
+N = 205  # Goertzel block size
+block = dtmf_signal[:N]   # Take first N samples
+
+g = GoertzelAlgorithm.GoertzelAlgorithm(fs=fs, block=N, target_freqs=target_freqs)
+powers = g.process(block)
+
+# Plot the Goertzel result
+plot_goertzel_power(powers)
