@@ -47,6 +47,8 @@ class RoutePlanner(Node): # gør at klassen arber fra node klassen, så vi kan b
             print("Waiting for robot to subscribe to cmd_vel...")
             rclpy.spin_once(self, timeout_sec=0.1)
 
+        time.sleep(1)  # small delay to ensure connection
+
         duration = max(0.0, float(duration))
         end_t = time.monotonic() + duration
         next_tick = time.monotonic()
