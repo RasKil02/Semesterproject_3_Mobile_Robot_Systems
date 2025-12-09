@@ -235,3 +235,26 @@ powers = g.process(block)
 
 # Plot the Goertzel result
 plot_goertzel_power(powers)
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_before_goertzel(signal, fs, title="Signal Before Goertzel (Time Domain)"):
+    """
+    Plots the time-domain signal BEFORE applying the Goertzel algorithm.
+    
+    signal: 1D numpy array
+    fs: sampling frequency in Hz
+    """
+    N = len(signal)
+    t = np.arange(N) / fs   # time axis in seconds
+
+    plt.figure(figsize=(8, 3))
+    plt.plot(t, signal, color="tab:blue")
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
