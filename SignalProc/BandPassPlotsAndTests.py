@@ -203,7 +203,7 @@ dtmf_signal = np.sin(2*np.pi*f_low*t) + np.sin(2*np.pi*f_high*t)
 
 # Add noise
 noise_level = 0.3
-noisy_sig = sig + noise_level * np.random.randn(len(sig))
+noisy_signal = dtmf_signal + noise_level * np.random.randn(len(dtmf_signal))
 
 
 # -------------------------------------------
@@ -218,7 +218,7 @@ sos = butter(4, [lowcut/(fs/2), highcut/(fs/2)], btype='bandpass', output='sos')
 # -------------------------------------------
 # 3) FILTER THE SIGNAL
 # -------------------------------------------
-filtered_signal = sosfilt(sos, dtmf_signal)
+filtered_signal = sosfilt(sos, noisy_signal)
 
 
 # -------------------------------------------
@@ -274,5 +274,5 @@ def plot_full_pipeline(original_signal, filtered_signal, fs, powers,
     plt.show()
 
 
-plot_full_pipeline(dtmf_signal, filtered_signal, fs, powers)
+plot_full_pipeline(noisy_signal, filtered_signal, fs, powers)
 
