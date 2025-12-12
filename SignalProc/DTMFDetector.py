@@ -317,8 +317,7 @@ class DTMFDetector:
         l2_db    = db10(E_low[l2])
         h_abs_db = db10(E_high[hf])
         h2_db    = db10(E_high[h2])
-
-        print("block_db:", blk_db, "l_abs_db:", l_abs_db, "h_abs_db:", h_abs_db)
+        
 
         low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
         high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
