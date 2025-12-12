@@ -154,11 +154,11 @@ class DTMFDetector:
 
                  # --- Adaptive separation thresholds ---
                  sep_min: float = 6,
-                 sep_max: float = 20,
+                 sep_max: float = 15,
 
                  # --- Adaptive SNR thresholds ---
                  snr_min: float = 5.0,
-                 snr_max: float = 20.0,
+                 snr_max: float = 15.0,
 
                  # --- Adaptive twist thresholds ---
                  twist_pos_default: float = +6.0,
