@@ -147,7 +147,7 @@ class DTMFDetector:
                  hop_ms: float   = 10.0,
                  lowcut: float   = 620.0,
                  highcut: float  = 1700.0,
-                 bp_order: int   = 4,
+                 bp_order: int   = 2,
 
                  # Absolute threshold
                  min_db: float = -20.0,
