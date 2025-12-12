@@ -225,7 +225,6 @@ class DTMFDetector:
                 f.write(f"Detected digits: {''.join(digits)}\n")
 
                 f.write("\n--- Threshold Settings ---\n")
-                f.write(f"min_db threshold: {self.min_db}\n")
                 f.write(f"twist_pos_db: {self.twist_pos_db}\n")
                 f.write(f"twist_neg_db: {self.twist_neg_db}\n")
                 f.write(f"sep_thresh_values: {sep_thresh_values}\n")  
@@ -361,7 +360,7 @@ class DTMFDetector:
 
     def collect_plot_metrics(self, t_ms, block, sym, metrics,
                          amplitudes, block_symbols, SNR_values,
-                         min_db_values, sep_db_values, twist_values, twist_neg_values, 
+                         sep_db_values, twist_values, twist_neg_values, 
                          twist_pos_values, sep_thresh_values, snr_thresh_values):
 
         if t_ms < 2000.0:
@@ -372,8 +371,7 @@ class DTMFDetector:
 
         # SNR
         SNR_values.append(min(metrics['snr_low'], metrics['snr_high']))
-        # min_db
-        min_db_values.append(min(metrics['min_db_low'], metrics['min_db_high']))
+
         # separation metric
         sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
         # twist
@@ -396,7 +394,6 @@ class DTMFDetector:
         amplitudes = []
         block_symbols = []
         SNR_values = []
-        min_db_values = []
         sep_db_values = []
         twist_values = []
         twist_neg_values = []
@@ -412,8 +409,7 @@ class DTMFDetector:
             # plotting
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
-                amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values,
+                amplitudes, block_symbols, SNR_values,sep_db_values,
                 twist_values, twist_neg_values, twist_pos_values, 
                 sep_thresh_values, snr_thresh_values)
 
@@ -487,7 +483,6 @@ class DTMFDetector:
         amplitudes = []
         block_symbols = []
         SNR_values = []
-        min_db_values = []
         sep_db_values = []
         twist_values = []
         twist_neg_values = []
@@ -504,8 +499,7 @@ class DTMFDetector:
 
             self.collect_plot_metrics(
                 t_ms, block, sym, metrics,
-                amplitudes, block_symbols, SNR_values,
-                min_db_values, sep_db_values, 
+                amplitudes, block_symbols, SNR_values, sep_db_values, 
                 twist_values, twist_neg_values, twist_pos_values
             )
 
