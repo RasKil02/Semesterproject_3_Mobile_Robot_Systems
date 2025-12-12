@@ -147,7 +147,7 @@ class DTMFDetector:
                  hop_ms: float   = 10.0,
                  lowcut: float   = 620.0,
                  highcut: float  = 1700.0,
-                 bp_order: int   = 2,
+                 bp_order: int   = 10,
 
                  # Absolute threshold
                  min_db: float = -20.0,
@@ -317,7 +317,7 @@ class DTMFDetector:
         l2_db    = db10(E_low[l2])
         h_abs_db = db10(E_high[hf])
         h2_db    = db10(E_high[h2])
-        
+
 
         low_noise  = np.mean([E_low[f]  for f in FREQS_LOW  if f != lf])  + EPS
         high_noise = np.mean([E_high[f] for f in FREQS_HIGH if f != hf]) + EPS
