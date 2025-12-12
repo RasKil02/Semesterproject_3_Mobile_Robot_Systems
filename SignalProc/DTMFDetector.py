@@ -466,9 +466,9 @@ class DTMFDetector:
 
             if len(digits) == 8:
                 # Save file after loop completes
-                #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                #                       dom_db_values, twist_values, twist_neg_values, twist_pos_values, 
-                #                       sep_thresh_values, dom_thresh_values, snr_thresh_values)
+                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                                       twist_values, twist_neg_values, twist_pos_values, 
+                                       sep_thresh_values, snr_thresh_values)
                 return "".join(digits)
 
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
