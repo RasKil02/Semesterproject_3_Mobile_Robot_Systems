@@ -205,7 +205,8 @@ class DTMFDetector:
         self.rms_max = float(rms_max)
 
     def save_plotting_txt(self, digits, amplitudes, block_symbols, SNR_values,
-                        sep_db_values, twist_values, twist_neg_values, twist_pos_values, sep_thresh_values, snr_thresh_values):
+                        sep_db_values, twist_values, twist_neg_values, twist_pos_values, 
+                        sep_thresh_values, snr_thresh_values, RMS_values, tone_flags):
 
         try:
             # Base directory = directory of THIS file
@@ -229,7 +230,6 @@ class DTMFDetector:
                 f.write(f"twist_neg_db: {self.twist_neg_db}\n")
                 f.write(f"sep_thresh_values: {sep_thresh_values}\n")  
                 f.write(f"snr_thresh_values: {snr_thresh_values}\n")
-
                 f.write("\n--- Collected Metrics ---\n")
 
                 f.write("\nAmplitude samples:\n")
@@ -266,6 +266,14 @@ class DTMFDetector:
                 
                 f.write("\nsnr_thresh_values:\n") 
                 for v in snr_thresh_values:
+                    f.write(f"{v}\n")
+                    
+                f.write("\nRMS_values:\n")
+                for v in RMS_values:
+                    f.write(f"{v}\n")
+                
+                f.write("\ntone_flags:\n")
+                for v in tone_flags:
                     f.write(f"{v}\n")
 
             print(f"Saved debug file: {filename}")
@@ -356,31 +364,47 @@ class DTMFDetector:
             "twist_pos_threshold": twist_pos_th,
             "twist_neg_threshold": twist_neg_th,
             "sep_thresh": sep_thresh,
-            "snr_thresh": snr_thresh
+            "snr_thresh": snr_thresh,
+            "rms": rms
         }
 
     def collect_plot_metrics(self, t_ms, block, sym, metrics,
-                         amplitudes, block_symbols, SNR_values,
-                         sep_db_values, twist_values, twist_neg_values, 
-                         twist_pos_values, sep_thresh_values, snr_thresh_values):
+                            amplitudes, block_symbols, SNR_values,
+                            sep_db_values, twist_values, twist_neg_values, 
+                            twist_pos_values, sep_thresh_values, snr_thresh_values,
+                            RMS_values, tone_flags):
 
         if t_ms < 2000.0:
             return
 
+        # amplitude
         amplitudes.extend(block.tolist())
+
+        # symbolic detection
         block_symbols.append(sym if sym is not None else " ")
+
+        # RMS value for this block
+        rms = np.sqrt(np.mean(block.astype(float)**2))
+        RMS_values.append(rms)
+
+        # tone_present flag (1 = tone, 0 = no tone)
+        tone_flags.append(1 if sym != "?" else 0)
 
         # SNR
         SNR_values.append(min(metrics['snr_low'], metrics['snr_high']))
 
-        # separation metric
+        # SEP
         sep_db_values.append(min(metrics['sep_low'], metrics['sep_high']))
-        # twist
+
+        # TWIST
         twist_values.append(metrics['twist'])
         twist_neg_values.append(metrics['twist_neg_threshold'])
         twist_pos_values.append(metrics['twist_pos_threshold'])
-        sep_thresh_values.append(metrics['sep_thresh'])  
+
+        # thresholds
+        sep_thresh_values.append(metrics['sep_thresh'])
         snr_thresh_values.append(metrics['snr_thresh'])
+
 
     def stream_and_detect(self, stabilizer, sampler, plot=False):
 
@@ -401,6 +425,8 @@ class DTMFDetector:
         twist_pos_values = []
         sep_thresh_values = []
         snr_thresh_values = []
+        RMS_values = []
+        tone_flags = []
 
         for block in sampler.stream_blocks(self.block):
 
@@ -412,7 +438,7 @@ class DTMFDetector:
                 t_ms, block, sym, metrics,
                 amplitudes, block_symbols, SNR_values,sep_db_values,
                 twist_values, twist_neg_values, twist_pos_values, 
-                sep_thresh_values, snr_thresh_values)
+                sep_thresh_values, snr_thresh_values, RMS_values, tone_flags)
 
             if collecting_payload:
                 timer += block_ms
@@ -423,18 +449,18 @@ class DTMFDetector:
                     collecting_payload = False
                     start_stage = 0
                     timer = 0.0
-                    #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values
-                    #                    ,twist_values, twist_neg_values, twist_pos_values, 
-                    #                   sep_thresh_values, snr_thresh_values)
-                    #amplitudes.clear()
-                    #block_symbols.clear()
-                    #SNR_values.clear()
-                    #sep_db_values.clear()
-                    #twist_values.clear()
-                    #twist_neg_values.clear()
-                    #twist_pos_values.clear()
-                    #sep_thresh_values.clear()
-                    #snr_thresh_values.clear()
+                    self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values
+                                        ,twist_values, twist_neg_values, twist_pos_values, 
+                                       sep_thresh_values, snr_thresh_values, RMS_values, tone_flags)
+                    amplitudes.clear()
+                    block_symbols.clear()
+                    SNR_values.clear()
+                    sep_db_values.clear()
+                    twist_values.clear()
+                    twist_neg_values.clear()
+                    twist_pos_values.clear()
+                    sep_thresh_values.clear()
+                    snr_thresh_values.clear()
                     continue
 
             if not out:
@@ -467,9 +493,9 @@ class DTMFDetector:
 
             if len(digits) == 8:
                 # Save file after loop completes
-                #self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
-                #                       twist_values, twist_neg_values, twist_pos_values, 
-                #                       sep_thresh_values, snr_thresh_values)
+                self.save_plotting_txt(digits, amplitudes, block_symbols, SNR_values, sep_db_values, 
+                                       twist_values, twist_neg_values, twist_pos_values, 
+                                       sep_thresh_values, snr_thresh_values, RMS_values, tone_flags)
                 return "".join(digits)
 
     def stream_and_detect_duration(self, stabilizer, sampler, duration):
@@ -481,13 +507,13 @@ class DTMFDetector:
         max_time_ms = duration * 1000.0
 
         # plotting containers
-        amplitudes = []
-        block_symbols = []
-        SNR_values = []
-        sep_db_values = []
-        twist_values = []
-        twist_neg_values = []
-        twist_pos_values = []
+        #amplitudes = []
+        #block_symbols = []
+        #SNR_values = []
+        #sep_db_values = []
+        #twist_values = []
+        #twist_neg_values = []
+        #twist_pos_values = []
 
         for block in sampler.stream_blocks(self.block):
             print(f"RMS amplitude: {np.sqrt(np.mean(block.astype(float)**2)):.5f}")
@@ -498,11 +524,11 @@ class DTMFDetector:
 
             sym, out, metrics = self.analyze_block(block, stabilizer, t_ms)
 
-            self.collect_plot_metrics(
-                t_ms, block, sym, metrics,
-                amplitudes, block_symbols, SNR_values, sep_db_values, 
-                twist_values, twist_neg_values, twist_pos_values
-            )
+            #self.collect_plot_metrics(
+            #    t_ms, block, sym, metrics,
+            #    amplitudes, block_symbols, SNR_values, sep_db_values, 
+            #    twist_values, twist_neg_values, twist_pos_values
+            #)
 
             t_ms += block_ms
 

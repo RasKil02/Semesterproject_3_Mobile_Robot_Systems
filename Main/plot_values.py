@@ -33,6 +33,9 @@ def read_plotting_txt(filename):
 
     sep_thresh_values = []
     snr_thresh_values = []
+    
+    RMS_values = []
+    tone_flags = []
 
     section = None
 
@@ -67,6 +70,11 @@ def read_plotting_txt(filename):
                 section = "sep_thresh"; continue
             if "snr_thresh_values" in line:
                 section = "snr_thresh"; continue
+                
+            if "RMS_values" in line:
+                section = "RMS"; continue
+            if "tone_flags" in line:
+                section = "tone_flags"; continue
 
             # Stop if name:value metadata
             if ":" in line and not line.replace('.', '', 1).isdigit():
@@ -92,6 +100,10 @@ def read_plotting_txt(filename):
                     sep_thresh_values.append(float(line))
                 elif section == "snr_thresh":
                     snr_thresh_values.append(float(line))
+                elif section == "RMS":
+                    RMS_values.append(float(line))
+                elif section == "tone_flags":
+                    tone_flags.append(int(line))
             except ValueError:
                 continue
 
@@ -104,7 +116,9 @@ def read_plotting_txt(filename):
         twist_pos_thresholds,
         twist_neg_thresholds,
         sep_thresh_values,
-        snr_thresh_values
+        snr_thresh_values,
+        RMS_values,
+        tone_flags
     )
 
 # ============================================================
