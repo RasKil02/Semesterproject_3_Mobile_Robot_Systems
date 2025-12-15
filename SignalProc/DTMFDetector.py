@@ -168,7 +168,7 @@ class DTMFDetector:
 
                  # RMS range for adaptivity
                  rms_min: float = 1,
-                 rms_max: float = 0.1):
+                 rms_max: float = 1.5):
         
         # Sampling configuration
         self.fs = int(fs)
@@ -338,6 +338,7 @@ class DTMFDetector:
         snr_thresh = self.adaptive_snr_threshold(
             rms, self.snr_min, self.snr_max, rms_min=0.01, rms_max=0.1
         )
+        
         snr_ok = (snr_low >= snr_thresh) and (snr_high >= snr_thresh)
 
         # Final decision ->
