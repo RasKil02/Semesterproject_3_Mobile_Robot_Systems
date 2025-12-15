@@ -138,7 +138,9 @@ def analyze_all_files(folder):
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    folder = os.path.join(base_dir, "Audio_plotting_txtfiles")
+    folder = os.path.join(base_dir, "..", "SignalProc", "Audio_plotting_txtfiles")
+    folder = os.path.abspath(folder)
+
 
     results = analyze_all_files(folder)
 
