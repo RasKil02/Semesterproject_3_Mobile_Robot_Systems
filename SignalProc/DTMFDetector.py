@@ -558,7 +558,7 @@ class DTMFDetector:
             return snr_min
 
         # Interpolate in reverse
-        scale = (rms - rms_min) / (rms_max - rms_min)
+        scale = np.sqrt((rms - rms_min) / (rms_max - rms_min))
         return snr_max - scale * (snr_max - snr_min)
 
 
@@ -571,7 +571,7 @@ class DTMFDetector:
         if rms >= rms_max:
             return sep_min   # strict threshold
 
-        scale = (rms - rms_min) / (rms_max - rms_min)
+        scale = np.sqrt((rms - rms_min) / (rms_max - rms_min))
         return sep_max - scale * (sep_max - sep_min)
     # Helper to find top 2 frequencies
     @staticmethod

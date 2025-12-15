@@ -161,8 +161,8 @@ class Plotting:
             label="Measured Value"
         )
 
-        """
-            # Threshold line
+
+        # Threshold line
         ax2.plot(
             x_blocks_sec,
             threshold_line,
@@ -171,7 +171,6 @@ class Plotting:
             linewidth=3,
             label="Threshold"
         )
-        """
         
         if title == "SNR and Amplitude":
             ax2.set_ylabel("SNR (dB)", color="blue")
@@ -224,10 +223,10 @@ class Plotting:
         )
 
         # Twist threshold lines
-        #ax2.plot(x_blocks_sec, neg_line, color="purple",
-        #        linestyle="dashed", linewidth=2)
-        #ax2.plot(x_blocks_sec, pos_line, color="purple",
-        #        linestyle="dashed", linewidth=2)
+        ax2.plot(x_blocks_sec, neg_line, color="purple",
+                linestyle="dashed", linewidth=2)
+        ax2.plot(x_blocks_sec, pos_line, color="purple",
+                linestyle="dashed", linewidth=2)
 
         ax2.set_ylabel("Twist (dB)", color="blue")
         ax2.tick_params(axis="y", labelcolor="blue")
