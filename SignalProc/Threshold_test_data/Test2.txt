@@ -1,0 +1,89 @@
+dtmf_debug_2025-12-15_13-29-34.txt:
+  mean_rms_tone: 0.3328116405025257
+  mean_rms_noise: 0.10964219708807674
+  mean_snr_tone: 30.428161017334048
+  mean_snr_noise: 5.251350942521583
+  mean_sep_tone: 27.4766037788941
+  mean_sep_noise: 2.3933095946023264
+  mean_twist_tone: 5.828645080753371
+  mean_twist_noise: 9.823662478868053
+
+dtmf_debug_2025-12-15_13-30-11.txt:
+  mean_rms_tone: 0.3223862325583676
+  mean_rms_noise: 0.09831439216982621
+  mean_snr_tone: 31.853912860875123
+  mean_snr_noise: 4.721894645751362
+  mean_sep_tone: 28.933877162823865
+  mean_sep_noise: 2.363815106632312
+  mean_twist_tone: 5.52710372515535
+  mean_twist_noise: 9.30304482928398
+
+dtmf_debug_2025-12-15_13-30-46.txt:
+  mean_rms_tone: 0.3302909391829827
+  mean_rms_noise: 0.08182061540068852
+  mean_snr_tone: 31.548376230166625
+  mean_snr_noise: 4.157160169080723
+  mean_sep_tone: 28.724815740896844
+  mean_sep_noise: 1.8677785109633844
+  mean_twist_tone: 4.285899133804317
+  mean_twist_noise: 7.140251742358047
+
+dtmf_debug_2025-12-15_13-31-26.txt:
+  mean_rms_tone: 0.3243762159098433
+  mean_rms_noise: 0.08438063030376879
+  mean_snr_tone: 30.6468491323631
+  mean_snr_noise: 4.06715651528325
+  mean_sep_tone: 27.82502719633063
+  mean_sep_noise: 1.882444692487221
+  mean_twist_tone: 5.131381975505004
+  mean_twist_noise: 8.054386573926436
+
+dtmf_debug_2025-12-15_13-32-03.txt:
+  mean_rms_tone: 0.32418290422914103
+  mean_rms_noise: 0.09309977148681114
+  mean_snr_tone: 30.88140817463437
+  mean_snr_noise: 4.901648592684712
+  mean_sep_tone: 27.91886959196134
+  mean_sep_noise: 2.383353572894827
+  mean_twist_tone: 6.316091969847037
+  mean_twist_noise: 7.076068680111048
+
+dtmf_debug_2025-12-15_13-32-43.txt:
+  mean_rms_tone: 0.31129877815703483
+  mean_rms_noise: 0.09248931461436428
+  mean_snr_tone: 32.59146572970833
+  mean_snr_noise: 4.930347798940687
+  mean_sep_tone: 30.0076319240221
+  mean_sep_noise: 2.7228214361739167
+  mean_twist_tone: 6.073882696589808
+  mean_twist_noise: 7.055964324896482
+
+dtmf_debug_2025-12-15_13-33-23.txt:
+  mean_rms_tone: 0.3262016495820257
+  mean_rms_noise: 0.096734075845591
+  mean_snr_tone: 30.951098429046052
+  mean_snr_noise: 4.808301529688813
+  mean_sep_tone: 27.878300733185608
+  mean_sep_noise: 2.151732162183658
+  mean_twist_tone: 4.787069051732166
+  mean_twist_noise: 9.140919235920745
+
+dtmf_debug_2025-12-15_13-34-05.txt:
+  mean_rms_tone: 0.3315390932369938
+  mean_rms_noise: 0.10591763575985633
+  mean_snr_tone: 31.824363557389876
+  mean_snr_noise: 4.798923849607631
+  mean_sep_tone: 28.87098337305133
+  mean_sep_noise: 2.169973488410653
+  mean_twist_tone: 5.419395753287616
+  mean_twist_noise: 7.0078889634924275
+
+Summary:
+  mean_rms_tone: 0.31129877815703483 - 0.3328116405025257
+  mean_rms_noise: 0.08182061540068852 - 0.10964219708807674
+  mean_snr_tone: 30.428161017334048 - 32.59146572970833
+  mean_snr_noise: 4.06715651528325 - 5.251350942521583
+  mean_sep_tone: 27.4766037788941 - 30.0076319240221
+  mean_sep_noise: 1.8677785109633844 - 2.7228214361739167
+  mean_twist_tone: 4.285899133804317 - 6.316091969847037
+  mean_twist_noise: 7.0078889634924275 - 9.823662478868053

@@ -239,8 +239,11 @@ if __name__ == "__main__":
             twist_pos_thresholds,
             twist_neg_thresholds,
             sep_thresh_values,
-            snr_thresh_values
+            snr_thresh_values,
+            RMS_values,
+            tone_flags
         ) = read_plotting_txt(full_path)
+
 
         plot_allplots_andsave_to_folder(
             full_path,
