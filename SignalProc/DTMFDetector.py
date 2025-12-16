@@ -163,8 +163,8 @@ class DTMFDetector:
                  # --- Adaptive twist thresholds ---
                  twist_pos_default: float = +6.0,
                  twist_neg_default: float = -6.0,
-                 twist_pos_max: float = +30.0,
-                 twist_neg_min: float = -30.0,
+                 twist_pos_max: float = +40.0,
+                 twist_neg_min: float = -40.0,
 
                  # RMS range for adaptivity
                  rms_min: float = 0.05,
