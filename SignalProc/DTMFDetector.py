@@ -153,11 +153,11 @@ class DTMFDetector:
                  twist_neg_db: float = -6.0,
 
                  # --- Adaptive separation thresholds ---
-                 sep_min: float = 7,
+                 sep_min: float = 6,
                  sep_max: float = 25,
 
                  # --- Adaptive SNR thresholds ---
-                 snr_min: float = 9,
+                 snr_min: float = 8,
                  snr_max: float = 25.0,
 
                  # --- Adaptive twist thresholds ---
@@ -168,7 +168,7 @@ class DTMFDetector:
 
                  # RMS range for adaptivity
                  rms_min: float = 0.10,
-                 rms_max: float = 0.30):
+                 rms_max: float = 0.20):
         
         # Sampling configuration
         self.fs = int(fs)
