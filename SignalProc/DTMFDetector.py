@@ -167,8 +167,8 @@ class DTMFDetector:
                  twist_neg_min: float = -40.0,
 
                  # RMS range for adaptivity
-                 rms_min: float = 0.05,
-                 rms_max: float = 0.15):
+                 rms_min: float = 0.02,
+                 rms_max: float = 0.08):
         
         # Sampling configuration
         self.fs = int(fs)
