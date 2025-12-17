@@ -168,7 +168,7 @@ class DTMFDetector:
 
                  # RMS range for adaptivity
                  rms_min: float = 0.02,
-                 rms_max: float = 0.08):
+                 rms_max: float = 0.05):
         
         # Sampling configuration
         self.fs = int(fs)
