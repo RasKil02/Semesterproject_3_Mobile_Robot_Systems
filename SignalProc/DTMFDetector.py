@@ -328,7 +328,7 @@ class DTMFDetector:
 
         # Adaptive thresholds and decisions ->
         sep_thresh = self.adaptive_sep_threshold(
-            rms, self.sep_min, self.sep_max, rms_min=0.005, rms_max=0.025
+            rms, self.sep_min, self.sep_max, rms_min=0.005, rms_max=0.020
         )
         sep_ok = (sep_low > sep_thresh) and (sep_high > sep_thresh)
 
@@ -339,12 +339,12 @@ class DTMFDetector:
             twist_pos_default=self.twist_pos_db,
             twist_neg_default=self.twist_neg_db,
             rms_min=0.005,
-            rms_max=0.025
+            rms_max=0.020
         )
         twist_ok = (twist_neg_th <= twist <= twist_pos_th)
 
         snr_thresh = self.adaptive_snr_threshold(
-            rms, self.snr_min, self.snr_max, rms_min=0.005, rms_max=0.025
+            rms, self.snr_min, self.snr_max, rms_min=0.005, rms_max=0.020
         )
         
         snr_ok = (snr_low >= snr_thresh) and (snr_high >= snr_thresh)
